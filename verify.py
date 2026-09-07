@@ -32,7 +32,9 @@ class P(HTMLParser):
         if tag=="title": self._t=False
 
 def check_pages():
-    pages=sorted(f for f in os.listdir(ROOT) if f.endswith(".html"))
+    # "_" prefixed files are throwaway scroll-position test pages
+    pages=sorted(f for f in os.listdir(ROOT)
+                 if f.endswith(".html") and not f.startswith("_"))
     if not pages: return fail("no HTML — run build.py")
     titles={}
     for n in pages:
