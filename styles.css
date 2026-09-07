@@ -10,19 +10,20 @@
   font-weight:400 500;font-display:swap;font-style:normal}
 
 :root{
-  --bg:#FBFBF9;
-  --surface:#F2F2EE;
-  --surface-2:#E8E8E2;
-  --ink:#0B0B0C;
-  --muted:#55565C;
-  --faint:#8A8B92;
-  --accent:#2436F0;
-  --accent-ink:#1A27B4;
-  --on-accent:#FFFFFF;
-  --line:rgba(11,11,12,.13);
-  --line-soft:rgba(11,11,12,.07);
-  --shadow:0 1px 2px rgba(11,11,12,.05),0 18px 44px -26px rgba(11,11,12,.4);
-  --shadow-lg:0 2px 6px rgba(11,11,12,.06),0 40px 80px -34px rgba(11,11,12,.45);
+  --bg:#05070C;
+  --bg-2:#080B13;
+  --surface:#0E1320;
+  --surface-2:#151B2C;
+  --ink:#EEF1F8;
+  --muted:#98A1B8;
+  --faint:#6A7288;
+  --accent:#4C6BFF;
+  --accent-ink:#8FA3FF;
+  --on-accent:#05070C;
+  --line:rgba(238,241,248,.14);
+  --line-soft:rgba(238,241,248,.07);
+  --shadow:0 2px 6px rgba(0,0,0,.5),0 26px 60px -30px rgba(0,0,0,.9);
+  --shadow-lg:0 2px 8px rgba(0,0,0,.55),0 46px 90px -36px rgba(0,0,0,.95);
 
   --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
@@ -43,8 +44,8 @@ button{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
 ::selection{background:var(--accent);color:var(--on-accent)}
 
-.skip{position:absolute;left:-9999px;top:0;z-index:200;background:var(--ink);
-  color:var(--bg);padding:12px 18px}
+.skip{position:absolute;left:-9999px;top:0;z-index:200;background:var(--accent);
+  color:#fff;padding:12px 18px}
 .skip:focus{left:12px;top:12px}
 
 /* ---------------------------------------------------------- typography --- */
@@ -65,11 +66,31 @@ button{font:inherit;color:inherit}
 .wrap--narrow{width:min(100% - var(--gut)*2,var(--narrow))}
 .sec{padding-block:clamp(64px,9vw,132px)}
 
+
+/* ============================ THE SCENE ================================= */
+/* Fixed behind everything. The CSS gradient is the poster: it paints
+   instantly and holds the space if WebGL never starts, if the module fails
+   to load, or under reduced motion. */
+.scene{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+  background:
+    radial-gradient(70% 55% at 50% 42%,rgba(76,107,255,.20),transparent 68%),
+    radial-gradient(90% 70% at 18% 8%,rgba(76,107,255,.10),transparent 60%),
+    var(--bg)}
+.scene__canvas{position:absolute;inset:0;width:100%;height:100%;display:block;
+  opacity:0;transition:opacity 1.1s var(--ease)}
+.scene.is-live .scene__canvas{opacity:1}
+/* a floor of darkness at the bottom so footer text always has contrast */
+.scene::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(to bottom,transparent 40%,rgba(5,7,12,.55) 100%)}
+
+/* everything the reader touches sits above it */
+.hdr,main,.foot{position:relative;z-index:1}
+
 /* -------------------------------------------------------------- header --- */
-.hdr{position:sticky;top:0;z-index:90;background:rgba(251,251,249,.82);
+.hdr{position:sticky;top:0;z-index:90;background:rgba(5,7,12,.72);
   backdrop-filter:blur(14px);border-bottom:1px solid transparent;
   transition:border-color .3s var(--ease),background .3s var(--ease)}
-.hdr.is-stuck{border-bottom-color:var(--line-soft);background:rgba(251,251,249,.95)}
+.hdr.is-stuck{border-bottom-color:var(--line-soft);background:rgba(5,7,12,.9)}
 .hdr__in{display:flex;align-items:center;gap:20px;min-height:64px}
 .brand{display:flex;align-items:center;gap:9px;text-decoration:none;
   margin-right:auto;font-weight:600;letter-spacing:-.03em;font-size:1.06rem}
@@ -82,18 +103,18 @@ button{font:inherit;color:inherit}
 /* -------------------------------------------------------------- button --- */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;
   min-height:48px;padding:0 24px;border-radius:var(--r);
-  background:var(--ink);color:var(--bg);border:1px solid var(--ink);
+  background:var(--accent);color:#fff;border:1px solid var(--accent);
   font-size:.94rem;font-weight:500;letter-spacing:-.01em;text-decoration:none;
   cursor:pointer;-webkit-tap-highlight-color:transparent;
   transition:background .25s var(--ease),transform .25s var(--ease),
              box-shadow .25s var(--ease),border-color .25s var(--ease)}
-.btn:hover{background:var(--accent);border-color:var(--accent);color:var(--on-accent);
-  transform:translateY(-1px);box-shadow:0 10px 26px -12px var(--accent)}
+.btn:hover{background:#6A85FF;border-color:#6A85FF;color:#fff;
+  transform:translateY(-1px);box-shadow:0 12px 34px -12px var(--accent)}
 .btn:active{transform:scale(.985)}
 .btn--sm{min-height:40px;padding:0 16px;font-size:.87rem}
 .btn--lg{min-height:56px;padding:0 32px;font-size:1rem}
 .btn--ghost{background:transparent;color:var(--ink);border-color:var(--line)}
-.btn--ghost:hover{background:var(--surface);color:var(--ink);border-color:var(--ink);
+.btn--ghost:hover{background:var(--surface);color:var(--ink);border-color:var(--line);
   box-shadow:none}
 
 /* ---------------------------------------------------------------- hero --- */
@@ -107,20 +128,20 @@ button{font:inherit;color:inherit}
   margin-bottom:11px}
 .machine__row{display:flex;gap:10px;align-items:stretch}
 .machine__input{flex:1;min-width:0;font:inherit;font-size:clamp(1rem,.95rem + .4vw,1.15rem);
-  color:var(--ink);background:#fff;border:1.5px solid var(--line);
+  color:var(--ink);background:rgba(14,19,32,.85);border:1.5px solid var(--line);
   border-radius:var(--r);padding:16px 18px;min-height:58px;
   transition:border-color .25s var(--ease),box-shadow .25s var(--ease)}
 .machine__input::placeholder{color:var(--faint)}
 .machine__input:focus{outline:0;border-color:var(--accent);
-  box-shadow:0 0 0 4px rgba(36,54,240,.12)}
+  box-shadow:0 0 0 4px rgba(76,107,255,.18)}
 .machine__go{min-height:58px;padding:0 26px;flex:none}
 
 .seeds{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px}
-.seed{font-size:.83rem;color:var(--muted);background:var(--surface);
+.seed{font-size:.83rem;color:var(--muted);background:rgba(21,27,44,.8);
   border:1px solid transparent;border-radius:100px;padding:7px 13px;
   cursor:pointer;transition:background .2s var(--ease),color .2s var(--ease),
     border-color .2s var(--ease)}
-.seed:hover{background:#fff;border-color:var(--line);color:var(--ink)}
+.seed:hover{background:var(--surface-2);border-color:var(--line);color:var(--ink)}
 
 .machine__stage{margin-top:clamp(26px,3.4vw,40px)}
 
@@ -137,15 +158,15 @@ button{font:inherit;color:inherit}
 @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.45}}
 
 /* the canvas the mock assembles into */
-.canvas{position:relative;border-radius:16px;background:var(--surface);
-  border:1px solid var(--line-soft);padding:clamp(18px,3vw,34px);
+.canvas{position:relative;border-radius:16px;background:rgba(14,19,32,.7);
+  backdrop-filter:blur(8px);border:1px solid var(--line-soft);padding:clamp(18px,3vw,34px);
   min-height:clamp(340px,44vw,470px);display:flex;align-items:center;
   justify-content:center;overflow:hidden}
 .canvas__app{width:100%;display:flex;gap:clamp(12px,2vw,22px);
   align-items:flex-start;justify-content:center}
 
 /* device frames */
-.scr{background:#fff;border-radius:14px;box-shadow:var(--shadow);
+.scr{background:#F7F8FB;border-radius:14px;box-shadow:var(--shadow);
   overflow:hidden;flex:1;min-width:0;max-width:260px;
   opacity:0;transform:translateY(16px) scale(.97);
   transition:opacity .5s var(--ease),transform .5s var(--ease);
@@ -163,7 +184,7 @@ button{font:inherit;color:inherit}
 .scr__body{padding:12px;display:grid;gap:9px}
 
 /* the primitives the screens are assembled from */
-.el{background:var(--surface);border-radius:6px;opacity:0;
+.el{background:#E7EAF2;border-radius:6px;opacity:0;
   animation:el-in .34s var(--ease) forwards}
 @keyframes el-in{to{opacity:1}}
 .el--search{height:26px;border-radius:100px}
@@ -172,8 +193,8 @@ button{font:inherit;color:inherit}
 .el--chips span:first-child{background:var(--accent);opacity:.85;max-width:52px}
 .el--list{height:34px;display:grid;grid-template-columns:26px 1fr;gap:8px;
   align-items:center;background:none}
-.el--list b{height:26px;border-radius:6px;background:var(--surface-2);display:block}
-.el--list i{height:8px;border-radius:4px;background:var(--surface);display:block;
+.el--list b{height:26px;border-radius:6px;background:#D5DAE7;display:block}
+.el--list i{height:8px;border-radius:4px;background:#E7EAF2;display:block;
   width:72%}
 .el--grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:none}
 .el--grid span{aspect-ratio:1.25;border-radius:7px;background:var(--surface)}
@@ -228,9 +249,9 @@ button{font:inherit;color:inherit}
 .machine__act{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
 
 /* -------------------------------------------------------------- thesis --- */
-.sec--thesis{background:var(--ink);color:var(--bg)}
-.sec--thesis .kicker{color:#8E97FF}
-.sec--thesis .prose p{color:rgba(251,251,249,.72)}
+.sec--thesis{background:linear-gradient(to bottom,rgba(5,7,12,.0),rgba(5,7,12,.86) 18%,rgba(5,7,12,.86) 82%,rgba(5,7,12,0));backdrop-filter:blur(2px)}
+.sec--thesis .kicker{color:var(--accent-ink)}
+.sec--thesis .prose p{color:var(--muted)}
 .thesis__title{max-width:20ch;margin-bottom:.7em}
 
 /* ------------------------------------------------------------ timeline --- */
@@ -265,8 +286,8 @@ button{font:inherit;color:inherit}
 .rngs{list-style:none;margin:clamp(28px,3.6vw,48px) 0 0;padding:0;
   display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
   background:var(--line-soft);border:1px solid var(--line-soft);border-radius:14px;
-  overflow:hidden}
-.rng{background:var(--bg);padding:clamp(18px,2.2vw,26px);
+  overflow:hidden;backdrop-filter:blur(6px)}
+.rng{background:rgba(8,11,19,.8);padding:clamp(18px,2.2vw,26px);
   transition:background .25s var(--ease)}
 .rng:hover{background:var(--surface)}
 .rng h3{font-size:.98rem;font-weight:600;letter-spacing:-.02em;margin:0 0 .45em}
@@ -274,7 +295,7 @@ button{font:inherit;color:inherit}
 .rng:last-child h3{color:var(--accent)}
 
 /* ----------------------------------------------------------------- faq --- */
-.sec--faq{background:var(--surface)}
+.sec--faq{background:rgba(14,19,32,.82);backdrop-filter:blur(6px);border-block:1px solid var(--line-soft)}
 .faqs{margin-top:clamp(20px,2.6vw,34px)}
 .faq{border-bottom:1px solid var(--line-soft)}
 .faq summary{cursor:pointer;list-style:none;padding:19px 40px 19px 0;
@@ -289,25 +310,24 @@ button{font:inherit;color:inherit}
 .faq p{margin:0 0 20px;color:var(--muted);max-width:64ch}
 
 /* --------------------------------------------------------------- close --- */
-.close{padding-block:clamp(70px,10vw,140px);text-align:center;
-  border-top:1px solid var(--line-soft)}
+.close{padding-block:clamp(90px,12vw,170px);text-align:center}
 .close__in .lede{margin-inline:auto}
 .close__in .btn{margin-top:2em}
 
 /* -------------------------------------------------------------- footer --- */
-.foot{background:var(--ink);color:rgba(251,251,249,.66);
+.foot{background:rgba(5,7,12,.92);backdrop-filter:blur(8px);border-top:1px solid var(--line-soft);color:var(--muted);
   padding-top:clamp(40px,5vw,64px)}
 .foot__in{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;
   padding-bottom:clamp(30px,4vw,48px)}
-.foot__name{margin:0;color:var(--bg);font-weight:600;letter-spacing:-.02em}
+.foot__name{margin:0;color:var(--ink);font-weight:600;letter-spacing:-.02em}
 .foot__loc{margin:.35em 0 0;font-size:.9rem}
 .foot__links{display:flex;gap:22px;flex-wrap:wrap;font-size:.9rem}
 .foot__links a{text-decoration:none;overflow-wrap:anywhere;
   transition:color .25s var(--ease)}
-.foot__links a:hover{color:var(--bg)}
+.foot__links a:hover{color:var(--ink)}
 .foot__base{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;
-  padding-block:18px;border-top:1px solid rgba(251,251,249,.12);
-  font-size:.78rem;color:rgba(251,251,249,.45)}
+  padding-block:18px;border-top:1px solid var(--line-soft);
+  font-size:.78rem;color:var(--faint)}
 .foot__base p{margin:0}
 .foot__note{max-width:58ch;text-align:right}
 

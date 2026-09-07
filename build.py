@@ -22,6 +22,7 @@ def version(path):
 
 
 CSS_V, JS_V = version("styles.css"), version("script.js")
+SCENE_V = version("scene.js")
 
 
 def wa(text=""):
@@ -89,14 +90,25 @@ def page(path, title, description, body):
 <meta name="theme-color" content="#FBFBF9">
 <link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="styles.css?v={CSS_V}">
+<script type="importmap">
+{{"imports":{{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+}}}}
+</script>
 </head>
 <body>
+<div class="scene" data-scene aria-hidden="true"></div>
 {header()}
 <main id="main">
 {body}
 </main>
 {footer()}
 <script src="script.js?v={JS_V}" defer></script>
+<script type="module">
+  // after first paint: the hero must never wait on 150 KB of WebGL
+  addEventListener("load", () => {{ import("./scene.js?v={SCENE_V}"); }});
+</script>
 </body>
 </html>'''
     open(os.path.join(ROOT, path), "w", encoding="utf-8").write(doc)
