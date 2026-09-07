@@ -106,6 +106,89 @@ def check_machine():
     print(f"  {len(B.ARCHETYPES)} archetypes, all rows have primitives")
 
 
+def check_scene_undefined_names():
+    """Catch identifiers used in scene.js that are never declared.
+
+    This is the bug that cost the most: a `pulse` variable was removed in one
+    edit while three uses of it survived in another block, so every animation
+    frame threw a ReferenceError and the scene froze on whatever it had last
+    drawn. It looked like a styling problem for three rounds.
+
+    A crude scope check is enough here — the file is one module with one big
+    function, and anything genuinely global is whitelisted.
+    """
+    path = os.path.join(ROOT, "scene.js")
+    if not os.path.exists(path):
+        return
+    src = open(path, encoding="utf-8").read()
+
+    # strip strings and comments so their contents are not read as code
+    code = re.sub(r"/\*.*?\*/", " ", src, flags=re.S)
+    code = re.sub(r"//[^\n]*", " ", code)
+    code = re.sub(r'"[^"\n]*"|\'[^\'\n]*\'|`[^`]*`', '""', code)
+
+    declared = set()
+    for pat in (r"\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)",
+                r"\bfunction\s+([A-Za-z_$][\w$]*)",
+                r"\bclass\s+([A-Za-z_$][\w$]*)"):
+        declared |= set(re.findall(pat, code))
+    # multi-declarator forms: let a = 1, b = 2, c = 3
+    for line in re.findall(r"\b(?:const|let|var)\s+([^;\n]+)", code):
+        for part in line.split(","):
+            m = re.match(r"\s*([A-Za-z_$][\w$]*)\s*=", part)
+            if m:
+                declared.add(m.group(1))
+    # params, destructuring, imports, labels
+    declared |= set(re.findall(r"\bfunction\s*\w*\s*\(([^)]*)\)", code)
+                    and [] or [])
+    for params in re.findall(r"\(([^()]*)\)\s*=>", code):
+        declared |= set(re.findall(r"[A-Za-z_$][\w$]*", params))
+    for params in re.findall(r"\bfunction\s*\w*\s*\(([^)]*)\)", code):
+        declared |= set(re.findall(r"[A-Za-z_$][\w$]*", params))
+    declared |= set(re.findall(r"\bimport\s+\*\s+as\s+(\w+)", code))
+    declared |= set(re.findall(r"\bimport\s*\{([^}]*)\}", code)
+                    and re.findall(r"[A-Za-z_$][\w$]*",
+                                   " ".join(re.findall(r"\bimport\s*\{([^}]*)\}", code))) or [])
+    for m in re.finditer(r"\bfor\s*\(\s*(?:const|let|var)\s+([\w$]+)", code):
+        declared.add(m.group(1))
+
+    GLOBALS = {
+        "window","document","console","Math","Object","Array","String","Number",
+        "Boolean","JSON","Date","Promise","Set","Map","Float32Array","Uint8Array",
+        "requestAnimationFrame","cancelAnimationFrame","setTimeout","clearTimeout",
+        "setInterval","clearInterval","addEventListener","removeEventListener",
+        "matchMedia","innerWidth","innerHeight","devicePixelRatio","scrollY",
+        "location","fetch","URL","Blob","performance","isNaN","parseFloat",
+        "parseInt","THREE","RoomEnvironment","undefined","null","true","false",
+        "this","new","return","if","else","for","while","function","const","let",
+        "var","of","in","typeof","instanceof","try","catch","throw","await",
+        "async","class","extends","super","import","from","export","default",
+        "break","continue","switch","case","do","delete","void","yield","get","set",
+    }
+
+    # object-literal method shorthand — `panelRect(r) { … }` — declares a
+    # property, not an identifier, so it must not count as a use
+    declared |= set(re.findall(r"^\s*([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*\{", code, re.M))
+    # object keys: `foo: bar`
+    declared |= set(re.findall(r"[{,]\s*([A-Za-z_$][\w$]*)\s*:", code))
+
+    # every bare identifier that is read
+    used = set(re.findall(r"(?<![.\w$])([A-Za-z_$][\w$]*)\s*(?![\w$]*\s*:)", code))
+    missing = sorted(n for n in used
+                     if n not in declared and n not in GLOBALS
+                     and not n.isupper() and len(n) > 2)
+    # only report names that look like real locals we lost
+    missing = [n for n in missing if re.search(r"(?<![.\w$])%s\b" % re.escape(n), code)]
+
+    if missing:
+        fail("scene.js: identifier(s) used but never declared: %s — a leftover "
+             "reference throws every frame and silently freezes the scene."
+             % ", ".join(missing[:8]))
+    else:
+        print("  scene.js: no undeclared identifiers")
+
+
+
 def check_scene_tdz():
     """The scene has died twice to the same mistake: boot() runs its body
     synchronously, so a module-level `const` declared BELOW the call site is
@@ -158,7 +241,8 @@ def check_no_leaked_placeholders():
 
 if __name__=="__main__":
     print("verifying build\n")
-    check_pages(); check_no_leaked_placeholders(); check_scene_tdz()
+    check_pages(); check_no_leaked_placeholders()
+    check_scene_tdz(); check_scene_undefined_names()
     check_contrast(); check_single_source(); check_machine()
     print()
     if problems:

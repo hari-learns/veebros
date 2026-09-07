@@ -427,22 +427,19 @@ async function boot() {
         else pos.lerp(new THREE.Vector3(pos.x * 3.2, pos.y * 3.2, -14), wordAmt);
       }
 
-      /* Modal: the cubes ring the panel. The orbit starts outside the panel
-         box so nothing ever sits on top of the form, it leans toward whichever
-         field has focus, and every keystroke kicks it outward for a beat. */
+      /* Modal: the hero's own ring formation, re-centred on the form.
+         Same concentric ellipses, same per-ring rotation, sized so the
+         innermost clears the panel, and tilted onto a diagonal. */
       if (modal > 0.01) {
-        const band = i % 3;                       // three concentric rings
-        const a2 = s.ringA * 2 + t * (0.55 - band * 0.11) + s.phase * TAU;
-        const rx = panelWX + 1.1 + band * 0.95 + pulse * (0.9 + band * 0.35)
-                   + burst * (6 + (i % 9) * 0.9);
-        const ry = panelWY + 0.9 + band * 0.80 + pulse * (0.7 + band * 0.3)
-                   + burst * (4 + (i % 7) * 0.7);
-        // lean toward the active field
-        const lean = 0.34;
+        const push = burst * (5 + (i % 9));
+        const rx = panelWX + 1.25 + s.ringI * 1.15 + push;
+        const ry = panelWY + 1.00 + s.ringI * 0.72 + push * 0.7;
+        const ox = Math.cos(ang) * rx;
+        const oy = Math.sin(ang) * ry;
         pos.lerp(new THREE.Vector3(
-          panelW.x + (focusW.x - panelW.x) * lean + Math.cos(a2) * rx,
-          panelW.y + (focusW.y - panelW.y) * lean + Math.sin(a2) * ry,
-          Math.sin(a2 * 2 + t) * (0.8 + pulse * 1.4)), modal);
+          panelW.x + ox * TILT_C - oy * TILT_S,
+          panelW.y + ox * TILT_S + oy * TILT_C,
+          s.ringZ * 0.5 + lit[i] * 1.2), modal);
       }
 
       const wantsCopyPush = roam > 0.02 && modal < 0.4;
