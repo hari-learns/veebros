@@ -72,6 +72,7 @@ def page(path, title, description, body, extra=""):
 <meta property="og:description" content="{esc(description)}">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#FBFBF9">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="styles.css?v={CSS_V}">
 <script type="importmap">
@@ -252,10 +253,21 @@ def build_home():
       <h2 class="h2" data-reveal style="--i:1">{C.TIMELINE_TITLE}</h2>
     </div>
     <div class="tl__grid">
-      <div class="clock" data-clock aria-hidden="true">
-        <div class="clock__face"><b data-clock-h>00</b><i>:</i><b data-clock-m>00</b></div>
-        <div class="clock__bar"><span data-clock-fill></span></div>
-        <p class="clock__cap">hours elapsed</p>
+      <div class="clock" aria-hidden="true">
+        <svg class="clock__dial" viewBox="0 0 100 100" width="132" height="132">
+          <circle cx="50" cy="50" r="46" class="clock__rim"/>
+          <g class="clock__ticks">
+            <line x1="50" y1="8"  x2="50" y2="15"/>
+            <line x1="92" y1="50" x2="85" y2="50"/>
+            <line x1="50" y1="92" x2="50" y2="85"/>
+            <line x1="8"  y1="50" x2="15" y2="50"/>
+          </g>
+          <line class="clock__hand clock__hand--h" x1="50" y1="50" x2="50" y2="28"/>
+          <line class="clock__hand clock__hand--m" x1="50" y1="50" x2="50" y2="18"/>
+          <line class="clock__hand clock__hand--s" x1="50" y1="56" x2="50" y2="14"/>
+          <circle cx="50" cy="50" r="3.2" class="clock__pin"/>
+        </svg>
+        <p class="clock__cap">forty-eight hours</p>
       </div>
       <ol class="tl__list">{rail}</ol>
     </div>
@@ -275,7 +287,8 @@ def build_home():
   <div class="wrap wrap--narrow close__in" data-reveal>
     <p class="kicker">{C.CLOSE_KICKER}</p>
     <h2 class="h2">{C.CLOSE_TITLE}</h2>
-    <p class="lede">{C.CLOSE_BODY}</p>
+    <p class="close__said">{C.CLOSE_BODY}</p>
+    <blockquote class="close__quote"><p>{C.CLOSE_QUOTE}</p></blockquote>
     <button class="btn btn--lg" type="button" data-open-modal>{C.CLOSE_CTA}</button>
   </div>
 </section>

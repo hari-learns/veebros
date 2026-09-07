@@ -42,12 +42,12 @@ WHO = [
     ("Anything you can describe",
      "Apps, dashboards, marketplaces, internal tools, the awkward thing that "
      "does not have a category yet."),
-    ("Built, not proposed",
+    ("We show you the product demo",
      "You get working software back, not a deck. That is the whole difference "
      "and it changes every conversation."),
     ("Fast enough to change your mind",
      "Two days from idea to something real means being wrong costs almost "
-     "nothing. So we can afford to try."),
+     "nothing."),
 ]
 
 # ------------------------------------------------------------- the machine ---
@@ -91,13 +91,15 @@ AFTER_BUILD_CTA = "Get this built for real"
 THESIS_KICKER = "Why this way"
 THESIS_TITLE = "You shouldn&rsquo;t have to buy software to find out whether you want it."
 THESIS_BODY = [
-    "The usual sequence asks you to commit first. Months of discovery, a "
-    "quote, a signature, an invoice &mdash; and you find out at the very end "
-    "whether the thing was right.",
-    "We think the order is wrong. See it working, on your phone, in front of "
-    "the people who&rsquo;ll actually use it. Then decide whether it&rsquo;s "
-    "worth building properly.",
-    "If it isn&rsquo;t, you&rsquo;ve lost two days and nothing else.",
+    "Most software starts with a long conversation about something that does "
+    "not exist yet. Documents, estimates, a signature &mdash; and everyone "
+    "quietly hoping that the picture in your head matches the picture in ours.",
+    "We would rather just show you. Send the idea over and in a couple of days "
+    "there is something real to open on your phone: screens you can tap, a "
+    "link you can hand to the people who will actually use it.",
+    "If it is right, we build it properly. If it is not, you will know exactly "
+    "why &mdash; and you will have found out the easy way, over a chat, with "
+    "the thing in front of you.",
 ]
 
 # ------------------------------------------------------------- the timeline ---
@@ -146,8 +148,10 @@ RANGE = [
 # ------------------------------------------------------------------- close ---
 CLOSE_KICKER = "Your turn"
 CLOSE_TITLE = "Send us something impossible."
-CLOSE_BODY = ("Worst case you get a free demo out of it and we learn "
-              "something. Best case you have your product by Thursday.")
+CLOSE_BODY = "A wise man once said:"
+CLOSE_QUOTE = ("We shall not cease from exploration, and the end of all our "
+               "exploring will be to arrive where we started and know the "
+               "place for the first time.")
 CLOSE_CTA = "Start with an idea"
 
 FAQ = [

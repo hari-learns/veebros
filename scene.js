@@ -176,6 +176,7 @@ async function boot() {
         Math.sin(i * 0.7) * 3),
       h: floorplan(cx, cy),
       phase: (i % 7) / 7,
+      u: i / COUNT,          // its place on the modal loop, 0..1
       word: null,
     });
   }
@@ -220,7 +221,10 @@ async function boot() {
   // The modal drives these. Cubes gather around whichever field has focus.
   let modal = 0, modalT = 0;            // 0..1 blend into modal behaviour
   let burst = 0, burstT = 0;            // the submit payoff
-  let pulse = 0;                        // decays after every keystroke
+  let loopT = 0;                        // the loop's own rotation
+  // A keystroke drops a beep at a random point on the loop; it travels round
+  // and fades. Up to four at once, so fast typing reads as a run of them.
+  const beeps = [];
   const panelN = new THREE.Vector2(0, 0);      // the modal panel, in NDC
   const panelHalf = new THREE.Vector2(0.3, 0.4);
   const focusN = new THREE.Vector2(0, 0);
@@ -241,8 +245,11 @@ async function boot() {
       focusTargetN.set((r.left + r.width / 2) / innerWidth * 2 - 1,
                        -((r.top + r.height / 2) / innerHeight * 2 - 1));
     },
-    // every keystroke kicks the ring
-    type() { pulse = Math.min(1, pulse + 0.55); },
+    // every keystroke drops a beep on the loop
+    type() {
+      if (beeps.length > 3) beeps.shift();
+      beeps.push({ u: Math.random(), life: 1 });
+    },
     burst() { burstT = 1; setTimeout(() => { burstT = 0; }, 2600); },
   };
 
@@ -268,7 +275,12 @@ async function boot() {
     cur += (target - cur) * 0.055;
     modal += (modalT - modal) * 0.07;
     burst += (burstT - burst) * 0.09;
-    pulse *= 0.90;   // each keystroke tops this back up
+    loopT += 0.0016;                       // the loop never stops turning
+    for (let b = beeps.length - 1; b >= 0; b--) {
+      beeps[b].u += 0.016;                 // the beep runs around the loop
+      beeps[b].life -= 0.012;
+      if (beeps[b].life <= 0) beeps.splice(b, 1);
+    }
     focusN.x += (focusTargetN.x - focusN.x) * 0.08;
     focusN.y += (focusTargetN.y - focusN.y) * 0.08;
     t += 0.0055;
@@ -281,7 +293,7 @@ async function boot() {
     const toWord    = ease(seg(p, 0.88, 1.0));    // the sign-off
     const roam      = Math.max(1 - toDie, toFree * (1 - toWord));
 
-    let panelWX = 3.2, panelWY = 2.4;
+    let panelWX = 3.2, panelWY = 2.4, modalBeep = 0;
     if (modal > 0.01) {
       ndcToWorld(focusN.x, focusN.y, focusW);
       ndcToWorld(panelN.x, panelN.y, panelW);
@@ -293,6 +305,7 @@ async function boot() {
 
     for (let i = 0; i < COUNT; i++) {
       const s = P[i];
+      let sBeep = 0;
 
       const ang = s.ringA + t * (0.40 - s.ringI * 0.045);
       pos.set(Math.cos(ang) * s.ringRX, Math.sin(ang) * s.ringRY, s.ringZ);
@@ -338,7 +351,7 @@ async function boot() {
       dummy.rotation.set(0.22 * r, ang * 0.25 * r + modal * ang * 0.4, 0.16 * r);
 
       const flat = Math.max(toWord, modal);
-      let side = (0.19 + 0.15 * toDie) * (1 - modal * 0.2);
+      let side = (0.19 + 0.15 * toDie) * (1 - modal * 0.2) * (1 + sBeep * 1.5);
       let depth = (0.19 * (1 - toDie) + s.h * toDie) * (1 - flat) + 0.20 * flat;
       if (toWord > 0) {
         // fill the cell, minus a hairline, so glyphs read as solid strokes

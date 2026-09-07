@@ -10,8 +10,9 @@
 <meta property="og:description" content="Send us an idea. We send back a working demo in 48 hours, free. Approve it, build from it, or walk away.">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#FBFBF9">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="styles.css?v=e59d3fb2c748">
+<link rel="stylesheet" href="styles.css?v=fe4dfb4b6195">
 <script type="importmap">
 {"imports":{
   "three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
@@ -45,7 +46,7 @@
       <button class="btn btn--lg" type="button" data-open-modal>Start an idea</button>
       <a class="btn btn--lg btn--ghost" href="#build">See how</a>
     </div>
-    <div class="whos"><div class="who" data-reveal style="--i:0"><h3>Anything you can describe</h3><p>Apps, dashboards, marketplaces, internal tools, the awkward thing that does not have a category yet.</p></div><div class="who" data-reveal style="--i:1"><h3>Built, not proposed</h3><p>You get working software back, not a deck. That is the whole difference and it changes every conversation.</p></div><div class="who" data-reveal style="--i:2"><h3>Fast enough to change your mind</h3><p>Two days from idea to something real means being wrong costs almost nothing. So we can afford to try.</p></div></div>
+    <div class="whos"><div class="who" data-reveal style="--i:0"><h3>Anything you can describe</h3><p>Apps, dashboards, marketplaces, internal tools, the awkward thing that does not have a category yet.</p></div><div class="who" data-reveal style="--i:1"><h3>We show you the product demo</h3><p>You get working software back, not a deck. That is the whole difference and it changes every conversation.</p></div><div class="who" data-reveal style="--i:2"><h3>Fast enough to change your mind</h3><p>Two days from idea to something real means being wrong costs almost nothing.</p></div></div>
   </div>
 </section>
 
@@ -97,7 +98,7 @@
   <div class="wrap wrap--narrow">
     <p class="kicker" data-reveal>Why this way</p>
     <h2 class="h2 thesis__title" data-reveal style="--i:1">You shouldn&rsquo;t have to buy software to find out whether you want it.</h2>
-    <div class="prose" data-reveal style="--i:2"><p>The usual sequence asks you to commit first. Months of discovery, a quote, a signature, an invoice &mdash; and you find out at the very end whether the thing was right.</p><p>We think the order is wrong. See it working, on your phone, in front of the people who&rsquo;ll actually use it. Then decide whether it&rsquo;s worth building properly.</p><p>If it isn&rsquo;t, you&rsquo;ve lost two days and nothing else.</p></div>
+    <div class="prose" data-reveal style="--i:2"><p>Most software starts with a long conversation about something that does not exist yet. Documents, estimates, a signature &mdash; and everyone quietly hoping that the picture in your head matches the picture in ours.</p><p>We would rather just show you. Send the idea over and in a couple of days there is something real to open on your phone: screens you can tap, a link you can hand to the people who will actually use it.</p><p>If it is right, we build it properly. If it is not, you will know exactly why &mdash; and you will have found out the easy way, over a chat, with the thing in front of you.</p></div>
   </div>
 </section>
 
@@ -108,10 +109,21 @@
       <h2 class="h2" data-reveal style="--i:1">Forty-eight hours, start to finish.</h2>
     </div>
     <div class="tl__grid">
-      <div class="clock" data-clock aria-hidden="true">
-        <div class="clock__face"><b data-clock-h>00</b><i>:</i><b data-clock-m>00</b></div>
-        <div class="clock__bar"><span data-clock-fill></span></div>
-        <p class="clock__cap">hours elapsed</p>
+      <div class="clock" aria-hidden="true">
+        <svg class="clock__dial" viewBox="0 0 100 100" width="132" height="132">
+          <circle cx="50" cy="50" r="46" class="clock__rim"/>
+          <g class="clock__ticks">
+            <line x1="50" y1="8"  x2="50" y2="15"/>
+            <line x1="92" y1="50" x2="85" y2="50"/>
+            <line x1="50" y1="92" x2="50" y2="85"/>
+            <line x1="8"  y1="50" x2="15" y2="50"/>
+          </g>
+          <line class="clock__hand clock__hand--h" x1="50" y1="50" x2="50" y2="28"/>
+          <line class="clock__hand clock__hand--m" x1="50" y1="50" x2="50" y2="18"/>
+          <line class="clock__hand clock__hand--s" x1="50" y1="56" x2="50" y2="14"/>
+          <circle cx="50" cy="50" r="3.2" class="clock__pin"/>
+        </svg>
+        <p class="clock__cap">forty-eight hours</p>
       </div>
       <ol class="tl__list"><li class="tl" data-reveal style="--i:0">
   <div class="tl__time"><span>00:00</span></div>
@@ -146,7 +158,8 @@
   <div class="wrap wrap--narrow close__in" data-reveal>
     <p class="kicker">Your turn</p>
     <h2 class="h2">Send us something impossible.</h2>
-    <p class="lede">Worst case you get a free demo out of it and we learn something. Best case you have your product by Thursday.</p>
+    <p class="close__said">A wise man once said:</p>
+    <blockquote class="close__quote"><p>We shall not cease from exploration, and the end of all our exploring will be to arrive where we started and know the place for the first time.</p></blockquote>
     <button class="btn btn--lg" type="button" data-open-modal>Start with an idea</button>
   </div>
 </section>
@@ -213,7 +226,7 @@
 <script src="script.js?v=fbeb77c12754" defer></script>
 <script type="module">
   // after first paint: the hero must never wait on 150 KB of WebGL
-  addEventListener("load", () => { import("./scene.js?v=1834ad09122a"); });
+  addEventListener("load", () => { import("./scene.js?v=f1d74916a592"); });
 </script>
 </body>
 </html>
