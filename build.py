@@ -41,12 +41,7 @@ def header():
       </svg>
       <span class="brand__name">{esc(C.NAME)}</span>
     </a>
-    <nav class="nav" aria-label="Primary">
-      <a href="#how">How it works</a>
-      <a href="#range">What we build</a>
-      <a href="#faq">Questions</a>
-    </nav>
-    <a class="btn btn--sm" href="#build">Start an idea</a>
+    <button class="btn btn--sm" type="button" data-open-modal>Start an idea</button>
   </div>
 </header>'''
 
@@ -56,19 +51,8 @@ def footer():
             if C.SHOW_CONCEPT_NOTE else "")
     return f'''
 <footer class="foot" id="contact">
-  <div class="wrap foot__in">
-    <div>
-      <p class="foot__name">{esc(C.LEGAL_NAME)}</p>
-      <p class="foot__loc">{esc(C.LOCATION)}</p>
-    </div>
-    <div class="foot__links">
-      <a href="{wa()}" target="_blank" rel="noopener">WhatsApp</a>
-      <a href="mailto:{C.EMAIL}">{esc(C.EMAIL)}</a>
-      <a href="tel:{C.PHONE_LINK}">{esc(C.PHONE)}</a>
-    </div>
-  </div>
   <div class="wrap foot__base">
-    <p>&copy; 2026 {esc(C.LEGAL_NAME)}</p>
+    <p>&copy; 2026 {esc(C.LEGAL_NAME)} &middot; {esc(C.LOCATION)}</p>
     {note}
   </div>
 </footer>'''
@@ -113,6 +97,48 @@ def page(path, title, description, body):
 </html>'''
     open(os.path.join(ROOT, path), "w", encoding="utf-8").write(doc)
     return path
+
+
+def idea_modal():
+    """Two fields. Anything more is a form, and a form is a proposal."""
+    return f'''
+<div class="modal" data-modal data-wa="{C.WHATSAPP}" hidden>
+  <div class="modal__scrim" data-modal-close></div>
+  <div class="modal__panel" role="dialog" aria-modal="true"
+       aria-labelledby="modal-title">
+    <button class="modal__x" type="button" data-modal-close aria-label="Close">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M5 5l14 14M19 5L5 19"/>
+      </svg>
+    </button>
+
+    <div class="modal__stage" data-modal-form>
+      <p class="kicker">Start an idea</p>
+      <h2 class="h2" id="modal-title">Two fields.<br>That is the whole brief.</h2>
+      <form class="mform" data-idea-form novalidate>
+        <label class="mfield">
+          <span>What do you want built?</span>
+          <textarea name="idea" rows="3" required data-field
+            placeholder="A booking system for my dental clinic&hellip;"></textarea>
+        </label>
+        <label class="mfield">
+          <span>WhatsApp number</span>
+          <input name="wa" type="tel" required data-field
+            placeholder="+91&hellip;" autocomplete="tel">
+        </label>
+        <button class="btn btn--lg btn--block" type="submit">Send it</button>
+        <p class="mform__note">We reply with a working demo. No meeting, no invoice.</p>
+      </form>
+    </div>
+
+    <div class="modal__stage modal__done" data-modal-done hidden>
+      <h2 class="h2">The idea is cool,<br>just like you.</h2>
+      <p class="lede">See it in life soon.</p>
+      <button class="btn btn--ghost" type="button" data-modal-close>Close</button>
+    </div>
+  </div>
+</div>'''
 
 
 def build_home():
@@ -236,9 +262,16 @@ def build_home():
   <div class="wrap wrap--narrow close__in" data-reveal>
     <h2 class="h2">{C.CLOSE_TITLE}</h2>
     <p class="lede">{C.CLOSE_BODY}</p>
-    <a class="btn btn--lg" href="#build" data-scroll-top>{C.CLOSE_CTA}</a>
+    <button class="btn btn--lg" type="button" data-open-modal>{C.CLOSE_CTA}</button>
   </div>
-</section>'''
+</section>
+
+<section class="signoff" aria-hidden="true">
+  <!-- deliberately empty: this is where the cubes spell the name -->
+  <p class="signoff__cap">Veebros</p>
+</section>
+
+{idea_modal()}'''
     return page("index.html", f"{C.NAME} — {C.HERO_KICKER}", C.DESCRIPTION, body)
 
 

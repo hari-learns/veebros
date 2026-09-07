@@ -321,4 +321,100 @@
       }
     }
   }
+
+  /* ============================= THE MODAL ============================== */
+  /* Two fields, and the scene answers to them: the cubes gather around
+     whichever field has focus, then scatter when it is sent. */
+  var modal = $("[data-modal]");
+  if (modal) {
+    var panel = $(".modal__panel", modal);
+    var formStage = $("[data-modal-form]", modal);
+    var doneStage = $("[data-modal-done]", modal);
+    var ideaForm = $("[data-idea-form]", modal);
+    var fields = $$("[data-field]", modal);
+    var lastFocus = null;
+
+    var scene = function () { return window.__scene; };
+
+    function pointAt(el) {
+      var s = scene();
+      if (s && el) s.focusRect(el.getBoundingClientRect());
+    }
+
+    function openModal() {
+      lastFocus = document.activeElement;
+      modal.hidden = false;
+      // next frame so the transition actually runs from its start state
+      requestAnimationFrame(function () { modal.classList.add("is-open"); });
+      document.documentElement.style.overflow = "hidden";
+      if (scene()) scene().modal(true);
+      pointAt(panel);
+      setTimeout(function () { if (fields[0]) fields[0].focus(); }, 260);
+    }
+
+    function closeModal() {
+      modal.classList.remove("is-open", "is-done");
+      document.documentElement.style.overflow = "";
+      if (scene()) scene().modal(false);
+      setTimeout(function () {
+        modal.hidden = true;
+        formStage.hidden = false;
+        doneStage.hidden = true;
+      }, 380);
+      if (lastFocus && lastFocus.focus) lastFocus.focus();
+    }
+
+    $$("[data-open-modal]").forEach(function (b) {
+      b.addEventListener("click", openModal);
+    });
+    $$("[data-modal-close]", modal).forEach(function (b) {
+      b.addEventListener("click", closeModal);
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !modal.hidden) closeModal();
+    });
+
+    // the cubes follow the caret from field to field
+    fields.forEach(function (f) {
+      f.addEventListener("focus", function () { pointAt(f); });
+    });
+    addEventListener("resize", function () {
+      if (!modal.hidden) pointAt(document.activeElement && document.activeElement.matches("[data-field]")
+        ? document.activeElement : panel);
+    }, { passive: true });
+
+    // keep tab inside the dialog while it is open
+    modal.addEventListener("keydown", function (e) {
+      if (e.key !== "Tab" || modal.hidden) return;
+      var f = $$('a[href],button:not([disabled]),textarea,input,select', modal)
+        .filter(function (el) { return el.offsetParent !== null; });
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    });
+
+    if (ideaForm) {
+      ideaForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var idea = (ideaForm.idea.value || "").trim();
+        var wa = (ideaForm.wa.value || "").trim();
+        if (!idea) { ideaForm.idea.focus(); return; }
+        if (!wa) { ideaForm.wa.focus(); return; }
+
+        if (scene()) { scene().burst(); scene().focusRect(panel.getBoundingClientRect()); }
+        formStage.hidden = true;
+        doneStage.hidden = false;
+        modal.classList.add("is-done");
+
+        // hand the brief over on the number they just gave us
+        var msg = "Hi Veebros \u2014 an idea for you.\n\n" + idea + "\n\nMy WhatsApp: " + wa;
+        var to = modal.getAttribute("data-wa") || "";
+        setTimeout(function () {
+          window.open("https://wa.me/" + to + "?text=" + encodeURIComponent(msg),
+                      "_blank", "noopener");
+        }, 900);
+      });
+    }
+  }
 })();

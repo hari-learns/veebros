@@ -11,7 +11,7 @@
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#FBFBF9">
 <link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="styles.css?v=ea626fe4af54">
+<link rel="stylesheet" href="styles.css?v=986659c9f0fd">
 <script type="importmap">
 {"imports":{
   "three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
@@ -31,12 +31,7 @@
       </svg>
       <span class="brand__name">Veebros</span>
     </a>
-    <nav class="nav" aria-label="Primary">
-      <a href="#how">How it works</a>
-      <a href="#range">What we build</a>
-      <a href="#faq">Questions</a>
-    </nav>
-    <a class="btn btn--sm" href="#build">Start an idea</a>
+    <button class="btn btn--sm" type="button" data-open-modal>Start an idea</button>
   </div>
 </header>
 <main id="main">
@@ -146,32 +141,65 @@
   <div class="wrap wrap--narrow close__in" data-reveal>
     <h2 class="h2">Send us something impossible.</h2>
     <p class="lede">Worst case you get a free demo out of it and we learn something. Best case you have your product by Thursday.</p>
-    <a class="btn btn--lg" href="#build" data-scroll-top>Start with an idea</a>
+    <button class="btn btn--lg" type="button" data-open-modal>Start with an idea</button>
   </div>
 </section>
+
+<section class="signoff" aria-hidden="true">
+  <!-- deliberately empty: this is where the cubes spell the name -->
+  <p class="signoff__cap">Veebros</p>
+</section>
+
+
+<div class="modal" data-modal data-wa="919000000000" hidden>
+  <div class="modal__scrim" data-modal-close></div>
+  <div class="modal__panel" role="dialog" aria-modal="true"
+       aria-labelledby="modal-title">
+    <button class="modal__x" type="button" data-modal-close aria-label="Close">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M5 5l14 14M19 5L5 19"/>
+      </svg>
+    </button>
+
+    <div class="modal__stage" data-modal-form>
+      <p class="kicker">Start an idea</p>
+      <h2 class="h2" id="modal-title">Two fields.<br>That is the whole brief.</h2>
+      <form class="mform" data-idea-form novalidate>
+        <label class="mfield">
+          <span>What do you want built?</span>
+          <textarea name="idea" rows="3" required data-field
+            placeholder="A booking system for my dental clinic&hellip;"></textarea>
+        </label>
+        <label class="mfield">
+          <span>WhatsApp number</span>
+          <input name="wa" type="tel" required data-field
+            placeholder="+91&hellip;" autocomplete="tel">
+        </label>
+        <button class="btn btn--lg btn--block" type="submit">Send it</button>
+        <p class="mform__note">We reply with a working demo. No meeting, no invoice.</p>
+      </form>
+    </div>
+
+    <div class="modal__stage modal__done" data-modal-done hidden>
+      <h2 class="h2">The idea is cool,<br>just like you.</h2>
+      <p class="lede">See it in life soon.</p>
+      <button class="btn btn--ghost" type="button" data-modal-close>Close</button>
+    </div>
+  </div>
+</div>
 </main>
 
 <footer class="foot" id="contact">
-  <div class="wrap foot__in">
-    <div>
-      <p class="foot__name">Veebros Info Solutions</p>
-      <p class="foot__loc">Chennai, India</p>
-    </div>
-    <div class="foot__links">
-      <a href="https://wa.me/919000000000" target="_blank" rel="noopener">WhatsApp</a>
-      <a href="mailto:hello@veebros.com">hello@veebros.com</a>
-      <a href="tel:+919000000000">+91 90000 00000</a>
-    </div>
-  </div>
   <div class="wrap foot__base">
-    <p>&copy; 2026 Veebros Info Solutions</p>
+    <p>&copy; 2026 Veebros Info Solutions &middot; Chennai, India</p>
     <p class="foot__note">Concept build. The phone number, email address and delivery count are placeholders and need replacing.</p>
   </div>
 </footer>
-<script src="script.js?v=96e111a705ea" defer></script>
+<script src="script.js?v=a5f3772c7c4e" defer></script>
 <script type="module">
   // after first paint: the hero must never wait on 150 KB of WebGL
-  addEventListener("load", () => { import("./scene.js?v=1c1f9844604c"); });
+  addEventListener("load", () => { import("./scene.js?v=dfebcec8c18e"); });
 </script>
 </body>
 </html>
