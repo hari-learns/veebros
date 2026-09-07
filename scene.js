@@ -203,6 +203,22 @@ async function boot() {
     new Float32Array(COUNT * 3).fill(1), 3);
   rig.add(mesh);
 
+  /* An ambient wave that lives BEHIND the wordmark, on its own mesh, so the
+     letters themselves never move. Only visible at the sign-off — the rest of
+     the page has enough going on. */
+  const WCOLS = mobile ? 22 : 32, WROWS = mobile ? 7 : 9;
+  const WCOUNT = WCOLS * WROWS;
+  const WPITCH = 0.60;
+  const waveMat = new THREE.MeshPhysicalMaterial({
+    color: 0xD8DCF0, metalness: 0.1, roughness: 0.62,
+    transparent: true, opacity: 0,
+  });
+  const wave = new THREE.InstancedMesh(geo, waveMat, WCOUNT);
+  wave.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  wave.frustumCulled = false;
+  wave.visible = false;
+  scene.add(wave);
+
   const traceMat = new THREE.MeshBasicMaterial({
     color: 0x4568FF, transparent: true, opacity: 0.9 });
   const traceCount = mobile ? 24 : 40;
@@ -559,6 +575,28 @@ async function boot() {
     mesh.rotation.z = 0.20 * dieView * (1 - flatten);
     traces.rotation.copy(mesh.rotation);
     camera.lookAt(0, (-1.1 * dieView) * (1 - flatten), 0);
+
+    /* the wave: a travelling swell on a grid, behind the letters */
+    const waveAmt = toWord * (1 - modal);
+    wave.visible = waveAmt > 0.02;
+    if (wave.visible) {
+      waveMat.opacity = 0.30 * waveAmt;
+      for (let i = 0; i < WCOUNT; i++) {
+        const gx = i % WCOLS, gy = (i / WCOLS) | 0;
+        const x = (gx - (WCOLS - 1) / 2) * WPITCH;
+        const y = (gy - (WROWS - 1) / 2) * WPITCH;
+        // two crossing swells so it never reads as a single repeating ripple
+        const h = Math.sin(gx * 0.52 + t * 3.1) * 0.42
+                + Math.cos(gy * 0.75 - t * 2.2) * 0.30;
+        dummy.position.set(x, y, -2.1 + h);
+        dummy.rotation.set(0, 0, h * 0.35);
+        const sc2 = 0.15 + Math.max(0, h) * 0.10;
+        dummy.scale.set(sc2, sc2, sc2);
+        dummy.updateMatrix();
+        wave.setMatrixAt(i, dummy.matrix);
+      }
+      wave.instanceMatrix.needsUpdate = true;
+    }
 
     renderer.render(scene, camera);
   }

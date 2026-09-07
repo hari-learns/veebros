@@ -33,8 +33,11 @@ class P(HTMLParser):
 
 def check_pages():
     # "_" prefixed files are throwaway scroll-position test pages
+    # "_" prefixed files are throwaway scroll-position test pages; artifact.html
+    # is the single-file bundle for Claude Artifacts, where the host owns <head>
     pages=sorted(f for f in os.listdir(ROOT)
-                 if f.endswith(".html") and not f.startswith("_"))
+                 if f.endswith(".html") and not f.startswith("_")
+                 and f != "artifact.html")
     if not pages: return fail("no HTML — run build.py")
     titles={}
     for n in pages:

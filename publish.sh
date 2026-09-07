@@ -20,7 +20,11 @@ python3 verify.py   # refuses to publish a broken build
 
 echo "==> stage the served files only"
 # Anything not listed here never reaches the public repo.
-cp *.html styles.css script.js scene.js favicon.svg .nojekyll "$STAGE/"
+for f in *.html; do
+  [ "$f" = "artifact.html" ] && continue   # the Artifact bundle, not a site page
+  cp "$f" "$STAGE/"
+done
+cp styles.css script.js scene.js favicon.svg .nojekyll "$STAGE/"
 mkdir -p "$STAGE/fonts" && cp fonts/*.woff2 "$STAGE/fonts/"
 
 cat > "$STAGE/README.md" <<'MD'
