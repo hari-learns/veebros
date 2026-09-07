@@ -11,7 +11,7 @@
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#FBFBF9">
 <link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="styles.css?v=986659c9f0fd">
+<link rel="stylesheet" href="styles.css?v=f3d8404fd617">
 <script type="importmap">
 {"imports":{
   "three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
@@ -166,16 +166,20 @@
       <p class="kicker">Start an idea</p>
       <h2 class="h2" id="modal-title">Two fields.<br>That is the whole brief.</h2>
       <form class="mform" data-idea-form novalidate>
-        <label class="mfield">
-          <span>What do you want built?</span>
-          <textarea name="idea" rows="3" required data-field
-            placeholder="A booking system for my dental clinic&hellip;"></textarea>
-        </label>
-        <label class="mfield">
-          <span>WhatsApp number</span>
-          <input name="wa" type="tel" required data-field
-            placeholder="+91&hellip;" autocomplete="tel">
-        </label>
+        <div class="fl fl--area" data-fl>
+          <div class="fl__box">
+            <textarea class="fl__input" id="f-idea" name="idea" rows="3"
+              required data-field placeholder=" "></textarea>
+          </div>
+          <label class="fl__label" for="f-idea">What do you want built?</label>
+        </div>
+        <div class="fl" data-fl>
+          <div class="fl__box">
+            <input class="fl__input" id="f-wa" name="wa" type="tel" required
+              data-field autocomplete="tel" placeholder=" ">
+          </div>
+          <label class="fl__label" for="f-wa">WhatsApp number</label>
+        </div>
         <button class="btn btn--lg btn--block" type="submit">Send it</button>
         <p class="mform__note">We reply with a working demo. No meeting, no invoice.</p>
       </form>
@@ -196,10 +200,10 @@
     <p class="foot__note">Concept build. The phone number, email address and delivery count are placeholders and need replacing.</p>
   </div>
 </footer>
-<script src="script.js?v=a5f3772c7c4e" defer></script>
+<script src="script.js?v=7892f8059e4d" defer></script>
 <script type="module">
   // after first paint: the hero must never wait on 150 KB of WebGL
-  addEventListener("load", () => { import("./scene.js?v=dfebcec8c18e"); });
+  addEventListener("load", () => { import("./scene.js?v=d8c22e5a9b37"); });
 </script>
 </body>
 </html>

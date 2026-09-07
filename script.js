@@ -417,4 +417,21 @@
       });
     }
   }
+
+  /* ------------------------------------------- floating label fields --- */
+  /* :has() covers modern browsers on its own; this keeps the state explicit
+     and handles the filled-but-not-focused case everywhere. */
+  $$("[data-fl]").forEach(function (fl) {
+    var input = $(".fl__input", fl);
+    if (!input) return;
+    var sync = function () {
+      var filled = String(input.value || "").length > 0;
+      fl.classList.toggle("is-raised", filled || document.activeElement === input);
+      fl.classList.toggle("is-focused", document.activeElement === input);
+    };
+    ["focus", "blur", "input", "change"].forEach(function (e) {
+      input.addEventListener(e, sync);
+    });
+    sync();
+  });
 })();

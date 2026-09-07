@@ -117,16 +117,20 @@ def idea_modal():
       <p class="kicker">Start an idea</p>
       <h2 class="h2" id="modal-title">Two fields.<br>That is the whole brief.</h2>
       <form class="mform" data-idea-form novalidate>
-        <label class="mfield">
-          <span>What do you want built?</span>
-          <textarea name="idea" rows="3" required data-field
-            placeholder="A booking system for my dental clinic&hellip;"></textarea>
-        </label>
-        <label class="mfield">
-          <span>WhatsApp number</span>
-          <input name="wa" type="tel" required data-field
-            placeholder="+91&hellip;" autocomplete="tel">
-        </label>
+        <div class="fl fl--area" data-fl>
+          <div class="fl__box">
+            <textarea class="fl__input" id="f-idea" name="idea" rows="3"
+              required data-field placeholder=" "></textarea>
+          </div>
+          <label class="fl__label" for="f-idea">What do you want built?</label>
+        </div>
+        <div class="fl" data-fl>
+          <div class="fl__box">
+            <input class="fl__input" id="f-wa" name="wa" type="tel" required
+              data-field autocomplete="tel" placeholder=" ">
+          </div>
+          <label class="fl__label" for="f-wa">WhatsApp number</label>
+        </div>
         <button class="btn btn--lg btn--block" type="submit">Send it</button>
         <p class="mform__note">We reply with a working demo. No meeting, no invoice.</p>
       </form>

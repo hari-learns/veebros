@@ -71,7 +71,7 @@ async function boot() {
   renderer.setSize(innerWidth, innerHeight);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.92;
+  renderer.toneMappingExposure = 1.12;
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, 120);
@@ -80,13 +80,16 @@ async function boot() {
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 
-  const key = new THREE.DirectionalLight(0xBFD0FF, 0.85);
+  const key = new THREE.DirectionalLight(0xFFFFFF, 1.5);
   key.position.set(5, 7, 6);
   scene.add(key);
-  const rim = new THREE.DirectionalLight(0x4C6BFF, 2.4);
+  const rim = new THREE.DirectionalLight(0x7C5CFF, 2.2);   // violet edge
   rim.position.set(-7, -3, -4);
   scene.add(rim);
-  scene.add(new THREE.AmbientLight(0x121828, 0.9));
+  const fill = new THREE.DirectionalLight(0x4568FF, 1.1);  // blue fill
+  fill.position.set(3, -5, 2);
+  scene.add(fill);
+  scene.add(new THREE.AmbientLight(0xE8EBF5, 1.5));
 
   /* ---------------------------------------------------------- geometry --- */
   const GRID = mobile ? 16 : 22;
@@ -97,9 +100,9 @@ async function boot() {
   // Transparent and dark: it must sit UNDER the type at all times. The rim
   // light describes the silhouette; the traces do the talking.
   const mat = new THREE.MeshPhysicalMaterial({
-    color: 0x1E2739, metalness: 0.9, roughness: 0.38,
-    clearcoat: 1, clearcoatRoughness: 0.25,
-    transparent: true, opacity: 0.62,
+    color: 0xC9CEE6, metalness: 0.18, roughness: 0.52,
+    clearcoat: 1, clearcoatRoughness: 0.30,
+    transparent: true, opacity: 0.72,
   });
   const rig = new THREE.Group();          // lets the object be staged
   scene.add(rig);
@@ -109,7 +112,7 @@ async function boot() {
   rig.add(mesh);
 
   const traceMat = new THREE.MeshBasicMaterial({
-    color: 0x4C6BFF, transparent: true, opacity: 0.8 });
+    color: 0x4568FF, transparent: true, opacity: 0.9 });
   const traceCount = mobile ? 24 : 40;
   const traces = new THREE.InstancedMesh(geo, traceMat, traceCount);
   traces.frustumCulled = false;
@@ -302,11 +305,13 @@ async function boot() {
         traces.setMatrixAt(i, dummy.matrix);
       }
       traces.instanceMatrix.needsUpdate = true;
-      traceMat.opacity = 0.8 * traceOn;
-      traceMat.color.setRGB(0.22 + alive * 0.36, 0.36 + alive * 0.34, 1);
+      traceMat.opacity = 0.9 * traceOn;
+      // blue settling toward violet as the die comes alive
+      traceMat.color.setRGB(0.27 + alive * 0.22, 0.41 - alive * 0.05, 1);
     }
 
-    mat.color.setHex(toWord > 0.5 ? 0x2C3654 : 0x1E2739);
+    // the wordmark is the content, so it takes the brand colour
+    mat.color.setHex(toWord > 0.5 ? 0x5B6BF0 : 0xC9CEE6);
 
     /* Staging. The die is ~9 world units across and the copy column is dead
        centre, so a centred chip simply sits on top of the words. While there
@@ -319,7 +324,7 @@ async function boot() {
     rig.position.x += (offX - rig.position.x) * 0.06;
     rig.scale.setScalar(rig.scale.x + (sc - rig.scale.x) * 0.06);
     // and it recedes further while the eye is on the copy
-    mat.opacity = (0.62 * (1 - toWord) + 0.95 * toWord) * (1 - 0.42 * reading);
+    mat.opacity = (0.72 * (1 - toWord) + 1.0 * toWord) * (1 - 0.40 * reading);
 
     const flatten = Math.max(toWord, modal);
     camera.position.set(Math.sin(t * 0.22) * 0.7 * roam * (1 - flatten),
