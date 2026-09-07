@@ -26,15 +26,41 @@ EMAIL = "hello@veebros.com"
 LOCATION = "Chennai, India"
 
 # --------------------------------------------------------------- the hero ---
-HERO_KICKER = "Software, in 48 hours"
-HERO_TITLE = "Tell us what to build."
-HERO_SUB = ("Type it below. We&rsquo;ll rough it out here in four seconds, "
-            "then build you the real one in forty-eight hours &mdash; free.")
+# Who we are. No field here — the page introduces itself before it asks for
+# anything.
+HERO_KICKER = "Veebros &middot; Product studio"
+# The <title> needs plain text, not markup — kickers carry entities.
+PAGE_TITLE = "Veebros — We bring anything to life"
+HERO_TITLE = "We bring anything<br>to life."
+HERO_SUB = ("From a sentence in your head to software you can open on your "
+            "phone. If you can describe it, we can build it &mdash; and we "
+            "will show you before you decide anything.")
+HERO_CTA = "Start an idea"
+HERO_CTA_2 = "See how"
+
+WHO = [
+    ("Anything you can describe",
+     "Apps, dashboards, marketplaces, internal tools, the awkward thing that "
+     "does not have a category yet."),
+    ("Built, not proposed",
+     "You get working software back, not a deck. That is the whole difference "
+     "and it changes every conversation."),
+    ("Fast enough to change your mind",
+     "Two days from idea to something real means being wrong costs almost "
+     "nothing. So we can afford to try."),
+]
+
+# ------------------------------------------------------------- the machine ---
+MACHINE_KICKER = "Watch one get built"
+MACHINE_TITLE = "Type an idea. See its shape."
+MACHINE_SUB = ("This is a rough sketch, assembled in your browser in about "
+               "four seconds. The real one takes us forty-eight hours and it "
+               "is free.")
 
 INPUT_LABEL = "What do you want to build?"
 INPUT_PLACEHOLDER = "a booking system for my dental clinic"
 
-# Prompts offered under the input so nobody faces a blank field.
+# Prompts under the input so nobody faces a blank field.
 SEEDS = [
     "a booking system for my dental clinic",
     "a marketplace for renting camera gear",
@@ -44,7 +70,7 @@ SEEDS = [
     "a course platform for my students",
 ]
 
-# What the machine says while it assembles. Deliberately honest at the end.
+# What the machine says while it assembles.
 BUILD_STEPS = [
     "Reading the idea",
     "Choosing a structure",
@@ -118,6 +144,7 @@ RANGE = [
 ]
 
 # ------------------------------------------------------------------- close ---
+CLOSE_KICKER = "Your turn"
 CLOSE_TITLE = "Send us something impossible."
 CLOSE_BODY = ("Worst case you get a free demo out of it and we learn "
               "something. Best case you have your product by Thursday.")

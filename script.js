@@ -347,7 +347,10 @@
       // next frame so the transition actually runs from its start state
       requestAnimationFrame(function () { modal.classList.add("is-open"); });
       document.documentElement.style.overflow = "hidden";
-      if (scene()) scene().modal(true);
+      if (scene()) {
+        scene().modal(true);
+        scene().panelRect(panel.getBoundingClientRect());
+      }
       pointAt(panel);
       setTimeout(function () { if (fields[0]) fields[0].focus(); }, 260);
     }
@@ -374,13 +377,19 @@
       if (e.key === "Escape" && !modal.hidden) closeModal();
     });
 
-    // the cubes follow the caret from field to field
+    // the cubes follow the caret from field to field, and every keystroke
+    // kicks the ring outward for a beat
     fields.forEach(function (f) {
       f.addEventListener("focus", function () { pointAt(f); });
+      f.addEventListener("input", function () {
+        if (scene()) scene().type();
+      });
     });
     addEventListener("resize", function () {
-      if (!modal.hidden) pointAt(document.activeElement && document.activeElement.matches("[data-field]")
-        ? document.activeElement : panel);
+      if (modal.hidden) return;
+      if (scene()) scene().panelRect(panel.getBoundingClientRect());
+      var a = document.activeElement;
+      pointAt(a && a.matches && a.matches("[data-field]") ? a : panel);
     }, { passive: true });
 
     // keep tab inside the dialog while it is open
@@ -402,7 +411,11 @@
         if (!idea) { ideaForm.idea.focus(); return; }
         if (!wa) { ideaForm.wa.focus(); return; }
 
-        if (scene()) { scene().burst(); scene().focusRect(panel.getBoundingClientRect()); }
+        if (scene()) {
+          scene().burst();
+          scene().focusRect(panel.getBoundingClientRect());
+          scene().panelRect(panel.getBoundingClientRect());
+        }
         formStage.hidden = true;
         doneStage.hidden = false;
         modal.classList.add("is-done");

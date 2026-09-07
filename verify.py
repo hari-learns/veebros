@@ -105,9 +105,27 @@ def check_machine():
             if len(k) < 3: fail(f"{a['id']}: keyword {k!r} is too short to be safe")
     print(f"  {len(B.ARCHETYPES)} archetypes, all rows have primitives")
 
+
+def check_no_leaked_placeholders():
+    """An f-string brace that was escaped by mistake renders as literal text.
+    It is easy to miss in a long template and it ships as visible garbage."""
+    import re
+    bad = []
+    for n in sorted(f for f in os.listdir(ROOT)
+                    if f.endswith(".html") and not f.startswith("_")):
+        html_txt = open(os.path.join(ROOT, n), encoding="utf-8").read()
+        for m in set(re.findall(r"\{[A-Za-z_][A-Za-z0-9_.\[\]()]*\}", html_txt)):
+            bad.append(f"{n}: {m}")
+    if bad:
+        fail(f"{len(bad)} un-substituted placeholder(s) in the output: "
+             + ", ".join(sorted(bad)[:8]))
+    else:
+        print("  no leaked template placeholders")
+
 if __name__=="__main__":
     print("verifying build\n")
-    check_pages(); check_contrast(); check_single_source(); check_machine()
+    check_pages(); check_no_leaked_placeholders()
+    check_contrast(); check_single_source(); check_machine()
     print()
     if problems:
         print(f"{len(problems)} PROBLEM(S):")

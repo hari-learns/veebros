@@ -24,38 +24,57 @@ if (host && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
   boot().catch((err) => { console.warn("[scene] disabled:", err); });
 }
 
-/* Sample real type into points so the wordmark is the actual typeface, not a
-   hand-plotted approximation. */
-async function sampleText(text, want) {
+/* Rasterise the word onto a COARSE grid and take one cube per lit cell.
+   Sampling arbitrary lit pixels by stride (the first attempt) scattered the
+   cubes and the letters read as noise; snapping to a grid gives a chunky
+   pixel-font that is unmistakably type. Cell pitch also sets the cube size,
+   so the glyphs nearly close up. */
+async function sampleWord(text, maxCubes) {
   try { await document.fonts.ready; } catch (e) { /* system font is fine */ }
-  const W = 340, H = 74;
+
+  const COLS = 74, ROWS = 15;          // the pixel grid the word is drawn on
+  const SS = 6;                        // supersample, then average per cell
+  const W = COLS * SS, H = ROWS * SS;
   const c = document.createElement("canvas");
   c.width = W; c.height = H;
   const g = c.getContext("2d", { willReadFrequently: true });
   g.fillStyle = "#fff";
-  g.font = '800 54px Inter, "Helvetica Neue", Arial, sans-serif';
+  g.font = `800 ${Math.round(H * 0.82)}px Inter, "Helvetica Neue", Arial, sans-serif`;
   g.textAlign = "center";
   g.textBaseline = "middle";
-  g.letterSpacing = "2px";
-  g.fillText(text, W / 2, H / 2 + 1);
+  g.fillText(text, W / 2, H / 2 + H * 0.02);
 
   const d = g.getImageData(0, 0, W, H).data;
-  const hits = [];
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) {
-      if (d[(y * W + x) * 4 + 3] > 130) hits.push([x, y]);
+  const cells = [];
+  for (let r = 0; r < ROWS; r++) {
+    for (let col = 0; col < COLS; col++) {
+      let ink = 0;
+      for (let y = 0; y < SS; y++) {
+        for (let x = 0; x < SS; x++) {
+          if (d[(((r * SS + y) * W) + (col * SS + x)) * 4 + 3] > 120) ink++;
+        }
+      }
+      // half the cell covered counts as on — keeps stems solid, drops fringes
+      if (ink / (SS * SS) >= 0.42) cells.push([col, r]);
     }
   }
-  if (!hits.length) return null;
+  if (!cells.length) return null;
 
-  // even stride rather than random picks, so the letters stay legible
-  const out = [];
-  const stride = hits.length / want;
-  for (let i = 0; i < want; i++) out.push(hits[Math.floor(i * stride) % hits.length]);
+  const WORLD_W = 12.6;
+  const pitch = WORLD_W / COLS;
+  const pts = cells.map(([col, r]) => new THREE.Vector3(
+    (col - (COLS - 1) / 2) * pitch,
+    -(r - (ROWS - 1) / 2) * pitch,
+    0));
 
-  const S = 13.5 / W;                       // world units across
-  return out.map(([x, y]) => new THREE.Vector3(
-    (x - W / 2) * S, -(y - H / 2) * S, 0));
+  // more cells than cubes would clip the word; thin evenly if it happens
+  if (pts.length > maxCubes) {
+    const keep = [];
+    const stride = pts.length / maxCubes;
+    for (let i = 0; i < maxCubes; i++) keep.push(pts[Math.floor(i * stride)]);
+    return { pts: keep, pitch };
+  }
+  return { pts, pitch };
 }
 
 async function boot() {
@@ -161,14 +180,23 @@ async function boot() {
     });
   }
 
-  const wordPts = await sampleText("VEEBROS", COUNT);
-  if (wordPts) for (let i = 0; i < COUNT; i++) P[i].word = wordPts[i];
+  const word = await sampleWord("VEEBROS", COUNT);
+  const wordPitch = word ? word.pitch : 0.2;
+  if (word) {
+    for (let i = 0; i < COUNT; i++) {
+      // spare cubes park at the last lit cell and shrink away, so the word
+      // is exactly the glyphs and nothing else
+      P[i].word = word.pts[i] || null;
+    }
+  }
 
   const dummy = new THREE.Object3D();
   const pos = new THREE.Vector3();
   const world = new THREE.Vector3();
   const ndc = new THREE.Vector3();
   const focusW = new THREE.Vector3();
+  const panelW = new THREE.Vector3();
+  const edgeW = new THREE.Vector3();
 
   /* ------------------------------------------------------------ scroll --- */
   let target = 0, cur = 0;
@@ -192,16 +220,29 @@ async function boot() {
   // The modal drives these. Cubes gather around whichever field has focus.
   let modal = 0, modalT = 0;            // 0..1 blend into modal behaviour
   let burst = 0, burstT = 0;            // the submit payoff
+  let pulse = 0;                        // decays after every keystroke
+  const panelN = new THREE.Vector2(0, 0);      // the modal panel, in NDC
+  const panelHalf = new THREE.Vector2(0.3, 0.4);
   const focusN = new THREE.Vector2(0, 0);
   const focusTargetN = new THREE.Vector2(0, 0);
 
   window.__scene = {
     modal(on) { modalT = on ? 1 : 0; },
-    focusRect(r) {                       // a DOMRect in CSS pixels
+    // the panel the cubes must ring — they orbit OUTSIDE this box
+    panelRect(r) {
+      if (!r) return;
+      panelN.set((r.left + r.width / 2) / innerWidth * 2 - 1,
+                 -((r.top + r.height / 2) / innerHeight * 2 - 1));
+      panelHalf.set(Math.max(r.width / innerWidth, 0.12),
+                    Math.max(r.height / innerHeight, 0.12));
+    },
+    focusRect(r) {
       if (!r) return;
       focusTargetN.set((r.left + r.width / 2) / innerWidth * 2 - 1,
                        -((r.top + r.height / 2) / innerHeight * 2 - 1));
     },
+    // every keystroke kicks the ring
+    type() { pulse = Math.min(1, pulse + 0.55); },
     burst() { burstT = 1; setTimeout(() => { burstT = 0; }, 2600); },
   };
 
@@ -227,6 +268,7 @@ async function boot() {
     cur += (target - cur) * 0.055;
     modal += (modalT - modal) * 0.07;
     burst += (burstT - burst) * 0.09;
+    pulse *= 0.90;   // each keystroke tops this back up
     focusN.x += (focusTargetN.x - focusN.x) * 0.08;
     focusN.y += (focusTargetN.y - focusN.y) * 0.08;
     t += 0.0055;
@@ -239,7 +281,15 @@ async function boot() {
     const toWord    = ease(seg(p, 0.88, 1.0));    // the sign-off
     const roam      = Math.max(1 - toDie, toFree * (1 - toWord));
 
-    if (modal > 0.01) ndcToWorld(focusN.x, focusN.y, focusW);
+    let panelWX = 3.2, panelWY = 2.4;
+    if (modal > 0.01) {
+      ndcToWorld(focusN.x, focusN.y, focusW);
+      ndcToWorld(panelN.x, panelN.y, panelW);
+      // half-extents of the panel in world units, so the ring clears it
+      ndcToWorld(panelN.x + panelHalf.x, panelN.y + panelHalf.y, edgeW);
+      panelWX = Math.abs(edgeW.x - panelW.x);
+      panelWY = Math.abs(edgeW.y - panelW.y);
+    }
 
     for (let i = 0; i < COUNT; i++) {
       const s = P[i];
@@ -248,16 +298,27 @@ async function boot() {
       pos.set(Math.cos(ang) * s.ringRX, Math.sin(ang) * s.ringRY, s.ringZ);
       pos.lerp(s.lattice, toLattice).lerp(s.die, toDie);
       if (toFree > 0) pos.lerp(s.free, toFree);
-      if (toWord > 0 && s.word) pos.lerp(s.word, toWord);
+      if (toWord > 0) {
+        if (s.word) pos.lerp(s.word, toWord);
+        else pos.lerp(new THREE.Vector3(pos.x * 3.2, pos.y * 3.2, -14), toWord);
+      }
 
-      // While the modal is open the field is the subject: cubes orbit it.
+      /* Modal: the cubes ring the panel. The orbit starts outside the panel
+         box so nothing ever sits on top of the form, it leans toward whichever
+         field has focus, and every keystroke kicks it outward for a beat. */
       if (modal > 0.01) {
-        const a2 = s.ringA * 3 + t * 0.9 + s.phase * TAU;
-        const rr = 2.4 + (i % 6) * 0.62 + burst * (5 + (i % 9) * 0.9);
+        const band = i % 3;                       // three concentric rings
+        const a2 = s.ringA * 2 + t * (0.55 - band * 0.11) + s.phase * TAU;
+        const rx = panelWX + 1.1 + band * 0.95 + pulse * (0.9 + band * 0.35)
+                   + burst * (6 + (i % 9) * 0.9);
+        const ry = panelWY + 0.9 + band * 0.80 + pulse * (0.7 + band * 0.3)
+                   + burst * (4 + (i % 7) * 0.7);
+        // lean toward the active field
+        const lean = 0.34;
         pos.lerp(new THREE.Vector3(
-          focusW.x + Math.cos(a2) * rr * 1.35,
-          focusW.y + Math.sin(a2) * rr * 0.78,
-          Math.sin(a2 * 2) * 1.1), modal);
+          panelW.x + (focusW.x - panelW.x) * lean + Math.cos(a2) * rx,
+          panelW.y + (focusW.y - panelW.y) * lean + Math.sin(a2) * ry,
+          Math.sin(a2 * 2 + t) * (0.8 + pulse * 1.4)), modal);
       }
 
       if (roam > 0.02 && modal < 0.4) {
@@ -277,9 +338,15 @@ async function boot() {
       dummy.rotation.set(0.22 * r, ang * 0.25 * r + modal * ang * 0.4, 0.16 * r);
 
       const flat = Math.max(toWord, modal);
-      const side = (0.19 + 0.15 * toDie) * (1 - toWord * 0.28);
-      dummy.scale.set(side, side,
-        (0.19 * (1 - toDie) + s.h * toDie) * (1 - flat) + 0.20 * flat);
+      let side = (0.19 + 0.15 * toDie) * (1 - modal * 0.2);
+      let depth = (0.19 * (1 - toDie) + s.h * toDie) * (1 - flat) + 0.20 * flat;
+      if (toWord > 0) {
+        // fill the cell, minus a hairline, so glyphs read as solid strokes
+        const lit = s.word ? wordPitch * 0.92 : 0;
+        side = side * (1 - toWord) + lit * toWord;
+        depth = depth * (1 - toWord) + wordPitch * 0.55 * toWord;
+      }
+      dummy.scale.set(side, side, depth);
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
     }
@@ -311,7 +378,8 @@ async function boot() {
     }
 
     // the wordmark is the content, so it takes the brand colour
-    mat.color.setHex(toWord > 0.5 ? 0x5B6BF0 : 0xC9CEE6);
+    mat.color.setHex(toWord > 0.5 ? 0x5B6BF0
+                   : (modal > 0.5 ? 0x9AA6E8 : 0xC9CEE6));
 
     /* Staging. The die is ~9 world units across and the copy column is dead
        centre, so a centred chip simply sits on top of the words. While there
@@ -324,7 +392,9 @@ async function boot() {
     rig.position.x += (offX - rig.position.x) * 0.06;
     rig.scale.setScalar(rig.scale.x + (sc - rig.scale.x) * 0.06);
     // and it recedes further while the eye is on the copy
-    mat.opacity = (0.72 * (1 - toWord) + 1.0 * toWord) * (1 - 0.40 * reading);
+    // the modal is the one place they should be unmistakable
+    mat.opacity = (0.72 * (1 - toWord) + 1.0 * toWord)
+                * (1 - 0.40 * reading) * (1 - modal) + 0.98 * modal;
 
     const flatten = Math.max(toWord, modal);
     camera.position.set(Math.sin(t * 0.22) * 0.7 * roam * (1 - flatten),

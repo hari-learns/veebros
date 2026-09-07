@@ -175,12 +175,29 @@ def build_home():
     # patterns and the copy stay in one place.
     archetypes = json.dumps(ARCHETYPES, separators=(",", ":"))
 
+    who = "".join(
+        f'<div class="who" data-reveal style="--i:{i}"><h3>{n}</h3><p>{d}</p></div>'
+        for i, (n, d) in enumerate(C.WHO))
+
     body = f'''
-<section class="hero" id="build">
+<section class="hero">
   <div class="wrap">
     <p class="kicker" data-reveal>{C.HERO_KICKER}</p>
     <h1 class="h1" data-reveal style="--i:1">{C.HERO_TITLE}</h1>
     <p class="hero__sub lede" data-reveal style="--i:2">{C.HERO_SUB}</p>
+    <div class="hero__act" data-reveal style="--i:3">
+      <button class="btn btn--lg" type="button" data-open-modal>{C.HERO_CTA}</button>
+      <a class="btn btn--lg btn--ghost" href="#build">{C.HERO_CTA_2}</a>
+    </div>
+    <div class="whos">{who}</div>
+  </div>
+</section>
+
+<section class="sec" id="build">
+  <div class="wrap">
+    <p class="kicker" data-reveal>{C.MACHINE_KICKER}</p>
+    <h2 class="h2" data-reveal style="--i:1">{C.MACHINE_TITLE}</h2>
+    <p class="lede" data-reveal style="--i:2">{C.MACHINE_SUB}</p>
 
     <div class="machine" data-machine data-archetypes="{esc(archetypes)}"
          data-wa="{C.WHATSAPP}" data-reveal style="--i:3">
@@ -209,8 +226,7 @@ def build_home():
           <h2 class="h3">{C.AFTER_BUILD_TITLE}</h2>
           <p>{C.AFTER_BUILD_BODY}</p>
           <div class="machine__act">
-            <a class="btn" data-machine-send target="_blank" rel="noopener"
-               href="{wa()}">{C.AFTER_BUILD_CTA}</a>
+            <button class="btn" type="button" data-open-modal>{C.AFTER_BUILD_CTA}</button>
             <button class="btn btn--ghost" type="button" data-machine-again>
               Try another idea
             </button>
@@ -255,6 +271,15 @@ def build_home():
   </div>
 </section>
 
+<section class="close" id="start">
+  <div class="wrap wrap--narrow close__in" data-reveal>
+    <p class="kicker">{C.CLOSE_KICKER}</p>
+    <h2 class="h2">{C.CLOSE_TITLE}</h2>
+    <p class="lede">{C.CLOSE_BODY}</p>
+    <button class="btn btn--lg" type="button" data-open-modal>{C.CLOSE_CTA}</button>
+  </div>
+</section>
+
 <section class="sec sec--faq" id="faq">
   <div class="wrap wrap--narrow">
     <h2 class="h2" data-reveal>Questions</h2>
@@ -262,21 +287,12 @@ def build_home():
   </div>
 </section>
 
-<section class="close">
-  <div class="wrap wrap--narrow close__in" data-reveal>
-    <h2 class="h2">{C.CLOSE_TITLE}</h2>
-    <p class="lede">{C.CLOSE_BODY}</p>
-    <button class="btn btn--lg" type="button" data-open-modal>{C.CLOSE_CTA}</button>
-  </div>
-</section>
-
 <section class="signoff" aria-hidden="true">
-  <!-- deliberately empty: this is where the cubes spell the name -->
   <p class="signoff__cap">Veebros</p>
 </section>
 
 {idea_modal()}'''
-    return page("index.html", f"{C.NAME} — {C.HERO_KICKER}", C.DESCRIPTION, body)
+    return page("index.html", C.PAGE_TITLE, C.DESCRIPTION, body)
 
 
 def build_404():
