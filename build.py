@@ -58,7 +58,7 @@ def footer():
 </footer>'''
 
 
-def page(path, title, description, body):
+def page(path, title, description, body, extra=""):
     robots = "noindex, nofollow" if C.NOINDEX else "index, follow"
     doc = f'''<!doctype html>
 <html lang="en" id="top">
@@ -87,6 +87,7 @@ def page(path, title, description, body):
 <main id="main">
 {body}
 </main>
+{extra}
 {footer()}
 <script src="script.js?v={JS_V}" defer></script>
 <script type="module">
@@ -102,8 +103,8 @@ def page(path, title, description, body):
 def idea_modal():
     """Two fields. Anything more is a form, and a form is a proposal."""
     return f'''
+<div class="scrim" data-scrim data-modal-close hidden></div>
 <div class="modal" data-modal data-wa="{C.WHATSAPP}" hidden>
-  <div class="modal__scrim" data-modal-close></div>
   <div class="modal__panel" role="dialog" aria-modal="true"
        aria-labelledby="modal-title">
     <button class="modal__x" type="button" data-modal-close aria-label="Close">
@@ -132,7 +133,6 @@ def idea_modal():
           <label class="fl__label" for="f-wa">WhatsApp number</label>
         </div>
         <button class="btn btn--lg btn--block" type="submit">Send it</button>
-        <p class="mform__note">We reply with a working demo. No meeting, no invoice.</p>
       </form>
     </div>
 
@@ -289,10 +289,9 @@ def build_home():
 
 <section class="signoff" aria-hidden="true">
   <p class="signoff__cap">Veebros</p>
-</section>
-
-{idea_modal()}'''
-    return page("index.html", C.PAGE_TITLE, C.DESCRIPTION, body)
+</section>'''
+    return page("index.html", C.PAGE_TITLE, C.DESCRIPTION, body,
+                extra=idea_modal())
 
 
 def build_404():

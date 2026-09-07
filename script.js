@@ -328,6 +328,8 @@
   var modal = $("[data-modal]");
   if (modal) {
     var panel = $(".modal__panel", modal);
+    var scrim = $("[data-scrim]");
+    var sceneEl = $("[data-scene]");
     var formStage = $("[data-modal-form]", modal);
     var doneStage = $("[data-modal-done]", modal);
     var ideaForm = $("[data-idea-form]", modal);
@@ -344,8 +346,17 @@
     function openModal() {
       lastFocus = document.activeElement;
       modal.hidden = false;
-      // next frame so the transition actually runs from its start state
-      requestAnimationFrame(function () { modal.classList.add("is-open"); });
+      if (scrim) scrim.hidden = false;
+      // Lift the cubes over the scrim immediately — this is a z-index, not an
+      // animation, and must not wait on a frame that may never come.
+      if (sceneEl) sceneEl.classList.add("is-modal");
+      // Force a reflow so the opacity transition runs from its start state.
+      // rAF would do too, but it is suspended in a hidden document and the
+      // panel would then open with no transition at all.
+      void modal.offsetWidth;
+      if (scrim) void scrim.offsetWidth;
+      modal.classList.add("is-open");
+      if (scrim) scrim.classList.add("is-open");
       document.documentElement.style.overflow = "hidden";
       if (scene()) {
         scene().modal(true);
@@ -357,10 +368,13 @@
 
     function closeModal() {
       modal.classList.remove("is-open", "is-done");
+      if (scrim) scrim.classList.remove("is-open");
+      if (sceneEl) sceneEl.classList.remove("is-modal");
       document.documentElement.style.overflow = "";
       if (scene()) scene().modal(false);
       setTimeout(function () {
         modal.hidden = true;
+        if (scrim) scrim.hidden = true;
         formStage.hidden = false;
         doneStage.hidden = true;
       }, 380);
@@ -370,7 +384,7 @@
     $$("[data-open-modal]").forEach(function (b) {
       b.addEventListener("click", openModal);
     });
-    $$("[data-modal-close]", modal).forEach(function (b) {
+    $$("[data-modal-close]").forEach(function (b) {
       b.addEventListener("click", closeModal);
     });
     document.addEventListener("keydown", function (e) {

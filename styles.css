@@ -431,14 +431,23 @@ button{font:inherit;color:inherit}
 .btn--lg:active{transform:translateY(0) scale(.985)}
 
 /* ============================= THE MODAL ================================ */
-.modal{position:fixed;inset:0;z-index:200;display:grid;place-items:center;
+.modal{position:fixed;inset:0;z-index:300;display:grid;place-items:center;
+  pointer-events:none;
   padding:var(--gut)}
 .modal[hidden]{display:none}
-.modal__scrim{position:absolute;inset:0;background:rgba(255,255,255,.72);
-  backdrop-filter:blur(10px);opacity:0;transition:opacity .5s var(--ease)}
-.modal.is-open .modal__scrim{opacity:1}
+/* Its own layer, deliberately BELOW the scene: the cubes have to float
+   between the dimmed page and the panel, or on a white ground they are
+   invisible behind a white wash. */
+.scrim{position:fixed;inset:0;z-index:100;
+  background:rgba(246,247,251,.86);backdrop-filter:blur(7px);
+  opacity:0;transition:opacity .45s var(--ease)}
+.scrim[hidden]{display:none}
+.scrim.is-open{opacity:1}
+/* lift the scene over the scrim while the modal is up */
+.scene{transition:z-index 0s}
+.scene.is-modal{z-index:200}
 
-.modal__panel{position:relative;width:min(100%,560px);
+.modal__panel{position:relative;pointer-events:auto;width:min(100%,560px);
   background:rgba(255,255,255,.92);backdrop-filter:blur(20px);
   border:1px solid var(--line);border-radius:18px;
   padding:clamp(26px,4vw,44px);box-shadow:var(--shadow-lg);

@@ -379,7 +379,7 @@ async function boot() {
 
     // the wordmark is the content, so it takes the brand colour
     mat.color.setHex(toWord > 0.5 ? 0x5B6BF0
-                   : (modal > 0.5 ? 0x9AA6E8 : 0xC9CEE6));
+                   : (modal > 0.5 ? 0x4F5FE8 : 0xC9CEE6));
 
     /* Staging. The die is ~9 world units across and the copy column is dead
        centre, so a centred chip simply sits on top of the words. While there
