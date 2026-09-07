@@ -14,12 +14,17 @@
 import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
+const TAU = Math.PI * 2;
+
 const host = document.querySelector("[data-scene]");
 if (host && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
-  boot().catch(() => { /* poster stays */ });
+  // Never swallow this. A silent catch here turns a one-line ReferenceError
+  // into an invisible failure: the canvas mounts, `is-live` never lands, the
+  // poster stays up, and the page looks merely empty rather than broken.
+  boot().catch((err) => {
+    console.warn("[scene] disabled:", err);   // poster remains, page is fine
+  });
 }
-
-const TAU = Math.PI * 2;
 
 async function boot() {
   const canvas = document.createElement("canvas");
