@@ -423,7 +423,9 @@ async function boot() {
       }
 
       const wantsCopyPush = roam > 0.02 && modal < 0.4;
-      const wantsPointer = ptrOn > 0.02 && modal < 0.4;
+      // Pointer shove is for the sign-off only. Everywhere else the cubes are
+      // background and should not react to the cursor at all.
+      const wantsPointer = ptrOn > 0.02 && toWord > 0.55 && modal < 0.4;
       if (wantsCopyPush || wantsPointer) {
         world.copy(pos).applyMatrix4(mesh.matrixWorld);
         ndc.copy(world).project(camera);
@@ -443,15 +445,18 @@ async function boot() {
           const dx = (ndc.x - ptr.x) * (innerWidth / innerHeight);
           const dy = ndc.y - ptr.y;
           const dist = Math.hypot(dx, dy);
-          const R = 0.42;
+          // 0.09 NDC ~= 4% of viewport height: a handful of cubes around the
+          // cursor, not a crater. The first pass at 0.42 punched a hole
+          // through the whole die.
+          const R = 0.09;
           if (dist < R) {
-            const k = (1 - dist / R);
-            const f = k * k * 2.6 * ptrOn / Math.max(rig.scale.x, 0.2);
+            const k = 1 - dist / R;
+            const f = k * k * 0.75 * ptrOn * toWord / Math.max(rig.scale.x, 0.2);
             const len = dist || 0.0001;
             pos.x += (dx / len) * f;
             pos.y += (dy / len) * f;
-            pos.z += k * 0.9;
-            sBeep = Math.max(sBeep, k * 0.55);   // and they swell a little
+            pos.z += k * 0.35;
+            sBeep = Math.max(sBeep, k * 0.3);   // and they swell a little
           }
         }
       }
