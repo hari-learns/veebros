@@ -354,7 +354,10 @@ button{font:inherit;color:inherit}
    mouse, awkward under a thumb — and the worst offenders are always the
    phone number and email. Pad rather than enlarge, so nothing else moves. */
 .seed{min-height:40px;display:inline-flex;align-items:center}
-@media (max-width:860px){
+/* 1024, not 860: iPad Pro landscape is 1024 CSS px and IS a touch device.
+   Scoping touch fixes lower leaves every target on iPad at its desktop size —
+   which is exactly what the audit caught here. */
+@media (max-width:1024px){
   .foot__links a{display:inline-block;padding-block:9px}
   .brand{padding-block:9px}
 }
@@ -589,3 +592,71 @@ button{font:inherit;color:inherit}
   letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:2px}
 .el--summary u{display:block;font-size:7.5px;font-weight:600;color:var(--accent);
   text-decoration:none;margin-top:2px}
+
+
+/* ==================== RESPONSIVE ENGINEERING ============================ */
+
+/* --- safe areas: notch, Dynamic Island, home indicator ------------------ */
+.hdr__in{padding-inline:max(0px,env(safe-area-inset-left))
+                       max(0px,env(safe-area-inset-right))}
+.wrap,.wrap--narrow{padding-inline:max(0px,env(safe-area-inset-left))
+                                  max(0px,env(safe-area-inset-right))}
+.foot__base{padding-bottom:max(18px,env(safe-area-inset-bottom))}
+.modal{padding:max(var(--gut),env(safe-area-inset-top))
+       max(var(--gut),env(safe-area-inset-right))
+       max(var(--gut),env(safe-area-inset-bottom))
+       max(var(--gut),env(safe-area-inset-left))}
+
+/* --- iOS zoom trap ------------------------------------------------------
+   Safari zooms the page whenever a focused field is under 16px and does not
+   zoom back — the layout jumps mid-form. This is the lead-capture form, so
+   it is the one place it must never happen. */
+@media (max-width:1024px){
+  input:not([type=hidden]):not([type=checkbox]):not([type=radio]),
+  textarea,select{font-size:16px}
+  .fl__input{font-size:16px}
+  .fl__label{font-size:16px}
+}
+
+/* --- the modal on a phone ----------------------------------------------
+   The panel must not fill the screen edge to edge, or the cube loops have
+   nowhere to run, and it must scroll rather than clip if the keyboard is up. */
+.modal__panel{max-height:calc(100svh - 2 * var(--gut));overflow-y:auto;
+  -webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+@media (max-width:560px){
+  .modal{padding:max(18px,env(safe-area-inset-top)) 18px
+         max(18px,env(safe-area-inset-bottom)) 18px}
+  .modal__panel{padding:24px 18px 22px;border-radius:16px}
+  .modal__stage .h2{font-size:1.45rem}
+}
+
+/* --- the mock screens read at phone size ------------------------------- */
+@media (max-width:680px){
+  .el--search{font-size:10px}
+  .el--chips span{font-size:9px}
+  .el--calhead i{font-size:9px}
+  .el--cta{font-size:11px}
+  .el--summary b,.el--summary u{font-size:9.5px}
+}
+
+/* --- narrow phones: 360 is the most common width worldwide, 320 the floor */
+@media (max-width:400px){
+  .machine__go{width:100%}
+  .seeds{gap:6px}
+  .seed{font-size:.8rem;padding:8px 11px}
+  .signoff{height:min(70svh,560px)}
+}
+@media (max-width:340px){
+  :root{--gut:16px}
+  .h1{font-size:2.05rem}
+  .close__quote p{font-size:1.15rem}
+}
+
+/* --- landscape phone: very little height, plenty of width --------------- */
+@media (max-height:520px) and (orientation:landscape){
+  .sec{padding-block:clamp(34px,6vw,56px)}
+  .hero{padding-block:74px 40px}
+  .signoff{height:auto;min-height:300px;padding-block:60px}
+  .modal__panel{max-height:calc(100svh - 24px)}
+  .clock{position:static}
+}

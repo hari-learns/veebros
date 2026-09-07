@@ -2,7 +2,7 @@
 <html lang="en" id="top">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Veebros — We bring anything to life</title>
 <meta name="description" content="Send us an idea. We send back a working demo in 48 hours, free. Approve it, build from it, or walk away.">
 <meta name="robots" content="noindex, nofollow">
@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#FBFBF9">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="styles.css?v=fe4dfb4b6195">
+<link rel="stylesheet" href="styles.css?v=a6122f8c2ad5">
 <script type="importmap">
 {"imports":{
   "three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
@@ -78,7 +78,8 @@
 
       <div class="machine__stage" data-machine-stage hidden>
         <ol class="steps" data-machine-steps aria-live="polite"><li class="step" data-step="0"><span class="step__dot"></span><span class="step__txt">Reading the idea</span></li><li class="step" data-step="1"><span class="step__dot"></span><span class="step__txt">Choosing a structure</span></li><li class="step" data-step="2"><span class="step__dot"></span><span class="step__txt">Laying out screens</span></li><li class="step" data-step="3"><span class="step__dot"></span><span class="step__txt">Placing components</span></li><li class="step" data-step="4"><span class="step__dot"></span><span class="step__txt">Applying the brand</span></li></ol>
-        <div class="canvas" data-machine-canvas></div>
+        <div class="canvas" data-machine-canvas role="img"
+               aria-label="A rough three-screen sketch of the product"></div>
         <div class="machine__after" data-machine-after hidden>
           <h2 class="h3">That took four seconds.</h2>
           <p>It&rsquo;s a rough shape, assembled in your browser from a pattern we know well. Yours gets built properly &mdash; real screens, real data, a link you can open on your phone and hand to someone else.</p>
@@ -226,7 +227,7 @@
 <script src="script.js?v=fbeb77c12754" defer></script>
 <script type="module">
   // after first paint: the hero must never wait on 150 KB of WebGL
-  addEventListener("load", () => { import("./scene.js?v=f1d74916a592"); });
+  addEventListener("load", () => { import("./scene.js?v=5e7538daa4a4"); });
 </script>
 </body>
 </html>

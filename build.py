@@ -64,7 +64,7 @@ def page(path, title, description, body, extra=""):
 <html lang="en" id="top">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{esc(title)}</title>
 <meta name="description" content="{esc(description)}">
 <meta name="robots" content="{robots}">
@@ -222,7 +222,8 @@ def build_home():
 
       <div class="machine__stage" data-machine-stage hidden>
         <ol class="steps" data-machine-steps aria-live="polite">{steps}</ol>
-        <div class="canvas" data-machine-canvas></div>
+        <div class="canvas" data-machine-canvas role="img"
+               aria-label="A rough three-screen sketch of the product"></div>
         <div class="machine__after" data-machine-after hidden>
           <h2 class="h3">{C.AFTER_BUILD_TITLE}</h2>
           <p>{C.AFTER_BUILD_BODY}</p>

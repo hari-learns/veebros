@@ -24,55 +24,128 @@ if (host && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
   boot().catch((err) => { console.warn("[scene] disabled:", err); });
 }
 
-/* Rasterise the word onto a COARSE grid and take one cube per lit cell.
-   Sampling arbitrary lit pixels by stride (the first attempt) scattered the
-   cubes and the letters read as noise; snapping to a grid gives a chunky
-   pixel-font that is unmistakably type. Cell pitch also sets the cube size,
-   so the glyphs nearly close up. */
-async function sampleWord(text, maxCubes) {
-  try { await document.fonts.ready; } catch (e) { /* system font is fine */ }
+/* A hand-authored 9x12 pixel font.
+ *
+ * Rasterising a real typeface and thresholding it will never give clean
+ * letterforms at this size — the font's optical corrections and the cutoff
+ * leave B with two different bowls and O lopsided. At nine cells wide there
+ * is no room for optical correction anyway, so the glyphs are drawn by hand.
+ *
+ * Every letter is deliberately symmetric:
+ *   V  mirrors left-right
+ *   E  mirrors top-bottom
+ *   B  mirrors top-bottom, so both bowls are identical (rows 2-4 and 7-9)
+ *   O  mirrors both ways
+ *   S  has 180-degree rotational symmetry
+ * The 12-row grid is 2 (bar) + 3 (counter) + 2 (bar) + 3 (counter) + 2 (bar),
+ * which is what makes the B and E halves come out exactly equal.
+ */
+const GLYPHS = {
+  V: ["##.....##",
+      "##.....##",
+      "##.....##",
+      "##.....##",
+      ".##...##.",
+      ".##...##.",
+      ".##...##.",
+      "..##.##..",
+      "..##.##..",
+      "..##.##..",
+      "...###...",
+      "...###..."],
+  E: ["#########",
+      "#########",
+      "##.......",
+      "##.......",
+      "##.......",
+      "#######..",
+      "#######..",
+      "##.......",
+      "##.......",
+      "##.......",
+      "#########",
+      "#########"],
+  B: ["#######..",
+      "########.",
+      "##....##.",
+      "##....##.",
+      "##....##.",
+      "########.",
+      "########.",
+      "##....##.",
+      "##....##.",
+      "##....##.",
+      "########.",
+      "#######.."],
+  R: ["#######..",
+      "########.",
+      "##....##.",
+      "##....##.",
+      "##....##.",
+      "########.",
+      "#######..",
+      "##..##...",
+      "##...##..",
+      "##...##..",
+      "##....##.",
+      "##....##."],
+  O: ["..#####..",
+      ".#######.",
+      "##.....##",
+      "##.....##",
+      "##.....##",
+      "##.....##",
+      "##.....##",
+      "##.....##",
+      "##.....##",
+      "##.....##",
+      ".#######.",
+      "..#####.."],
+  S: [".#######.",
+      "########.",
+      "##.......",
+      "##.......",
+      "##.......",
+      "########.",
+      ".########",
+      ".......##",
+      ".......##",
+      ".......##",
+      ".########",
+      ".#######."],
+};
 
-  const COLS = 74, ROWS = 15;          // the pixel grid the word is drawn on
-  const SS = 6;                        // supersample, then average per cell
-  const W = COLS * SS, H = ROWS * SS;
-  const c = document.createElement("canvas");
-  c.width = W; c.height = H;
-  const g = c.getContext("2d", { willReadFrequently: true });
-  g.fillStyle = "#fff";
-  g.font = `800 ${Math.round(H * 0.82)}px Inter, "Helvetica Neue", Arial, sans-serif`;
-  g.textAlign = "center";
-  g.textBaseline = "middle";
-  g.fillText(text, W / 2, H / 2 + H * 0.02);
+function buildWord(text, maxCubes) {
+  const GW = 9, GH = 12, GAP = 2;
+  const letters = text.split("");
+  const cols = letters.length * GW + (letters.length - 1) * GAP;
 
-  const d = g.getImageData(0, 0, W, H).data;
   const cells = [];
-  for (let r = 0; r < ROWS; r++) {
-    for (let col = 0; col < COLS; col++) {
-      let ink = 0;
-      for (let y = 0; y < SS; y++) {
-        for (let x = 0; x < SS; x++) {
-          if (d[(((r * SS + y) * W) + (col * SS + x)) * 4 + 3] > 120) ink++;
-        }
+  letters.forEach((ch, n) => {
+    const g = GLYPHS[ch];
+    if (!g) return;
+    const x0 = n * (GW + GAP);
+    for (let r = 0; r < GH; r++) {
+      for (let c = 0; c < GW; c++) {
+        if (g[r][c] === "#") cells.push([x0 + c, r]);
       }
-      // half the cell covered counts as on — keeps stems solid, drops fringes
-      if (ink / (SS * SS) >= 0.42) cells.push([col, r]);
     }
-  }
+  });
   if (!cells.length) return null;
 
-  const WORLD_W = 12.6;
-  const pitch = WORLD_W / COLS;
-  const pts = cells.map(([col, r]) => new THREE.Vector3(
-    (col - (COLS - 1) / 2) * pitch,
-    -(r - (ROWS - 1) / 2) * pitch,
+  const WORLD_W = 13.2;
+  const pitch = WORLD_W / cols;
+  let pts = cells.map(([c, r]) => new THREE.Vector3(
+    (c - (cols - 1) / 2) * pitch,
+    -(r - (GH - 1) / 2) * pitch,
     0));
 
-  // more cells than cubes would clip the word; thin evenly if it happens
+  // never clip a glyph: if the word needs more cubes than we have, thin it
   if (pts.length > maxCubes) {
     const keep = [];
     const stride = pts.length / maxCubes;
     for (let i = 0; i < maxCubes; i++) keep.push(pts[Math.floor(i * stride)]);
-    return { pts: keep, pitch };
+    pts = keep;
   }
   return { pts, pitch };
 }
@@ -85,7 +158,8 @@ async function boot() {
   const renderer = new THREE.WebGLRenderer({
     canvas, antialias: false, alpha: true, powerPreference: "high-performance",
   });
-  const mobile = innerWidth < 760;
+  let mobile = innerWidth < 760;
+  const narrow = () => innerWidth < 760;
   renderer.setPixelRatio(Math.min(devicePixelRatio, mobile ? 1.75 : 2));
   renderer.setSize(innerWidth, innerHeight);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -181,7 +255,7 @@ async function boot() {
     });
   }
 
-  const word = await sampleWord("VEEBROS", COUNT);
+  const word = buildWord("VEEBROS", COUNT);
   const wordPitch = word ? word.pitch : 0.2;
   if (word) {
     for (let i = 0; i < COUNT; i++) {
@@ -207,6 +281,8 @@ async function boot() {
   };
   addEventListener("scroll", readScroll, { passive: true });
   addEventListener("resize", () => {
+    mobile = narrow();
+    renderer.setPixelRatio(Math.min(devicePixelRatio, mobile ? 1.75 : 2));
     renderer.setSize(innerWidth, innerHeight);
     camera.aspect = innerWidth / innerHeight;
     camera.updateProjectionMatrix();
@@ -216,6 +292,23 @@ async function boot() {
 
   let live = true;
   addEventListener("visibilitychange", () => { live = !document.hidden; });
+
+  /* Pointer. Cubes shove out of the way of the cursor — most obvious on the
+     wordmark, where they are the content and you can push the letters
+     around. Hover only: a coarse pointer has no hover state and a finger
+     already has the scroll. */
+  const hover = matchMedia("(hover: hover) and (pointer: fine)").matches;
+  const ptr = new THREE.Vector2(-9, -9);
+  const ptrTo = new THREE.Vector2(-9, -9);
+  let ptrOn = 0, ptrOnT = 0;
+  if (hover) {
+    addEventListener("pointermove", (e) => {
+      ptrTo.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight * 2 - 1));
+      ptrOnT = 1;
+    }, { passive: true });
+    addEventListener("pointerleave", () => { ptrOnT = 0; }, { passive: true });
+    addEventListener("blur", () => { ptrOnT = 0; });
+  }
 
   /* ------------------------------------------------ the page's handle --- */
   // The modal drives these. Cubes gather around whichever field has focus.
@@ -276,6 +369,9 @@ async function boot() {
     modal += (modalT - modal) * 0.07;
     burst += (burstT - burst) * 0.09;
     loopT += 0.0016;                       // the loop never stops turning
+    ptrOn += (ptrOnT - ptrOn) * 0.08;
+    ptr.x += (ptrTo.x - ptr.x) * 0.16;
+    ptr.y += (ptrTo.y - ptr.y) * 0.16;
     for (let b = beeps.length - 1; b >= 0; b--) {
       beeps[b].u += 0.016;                 // the beep runs around the loop
       beeps[b].life -= 0.012;
@@ -334,15 +430,37 @@ async function boot() {
           Math.sin(a2 * 2 + t) * (0.8 + pulse * 1.4)), modal);
       }
 
-      if (roam > 0.02 && modal < 0.4) {
-        world.copy(pos).applyMatrix4(mesh.matrixWorld);
+      const wantsCopyPush = roam > 0.02 && modal < 0.4;
+      const wantsPointer = ptrOn > 0.02 && modal < 0.4;
+      if (wantsCopyPush || wantsPointer) {
+        world.copy(pos).applyMatrix4(rig.matrixWorld).applyMatrix4(mesh.matrix);
         ndc.copy(world).project(camera);
-        const d = Math.max(Math.abs(ndc.x) / ZX, Math.abs(ndc.y) / ZY);
-        if (d < 1) {
-          const len = Math.hypot(ndc.x, ndc.y) || 0.0001;
-          const f = (1 - d) * PUSH * roam * (1 - modal);
-          pos.x += (ndc.x / len) * f;
-          pos.y += (ndc.y / len) * f * 0.7;
+
+        if (wantsCopyPush) {
+          const d = Math.max(Math.abs(ndc.x) / ZX, Math.abs(ndc.y) / ZY);
+          if (d < 1) {
+            const len = Math.hypot(ndc.x, ndc.y) || 0.0001;
+            const f = (1 - d) * PUSH * roam * (1 - modal);
+            pos.x += (ndc.x / len) * f;
+            pos.y += (ndc.y / len) * f * 0.7;
+          }
+        }
+
+        if (wantsPointer) {
+          // aspect-corrected so the shove is round, not an ellipse
+          const dx = (ndc.x - ptr.x) * (innerWidth / innerHeight);
+          const dy = ndc.y - ptr.y;
+          const dist = Math.hypot(dx, dy);
+          const R = 0.42;
+          if (dist < R) {
+            const k = (1 - dist / R);
+            const f = k * k * 2.6 * ptrOn / Math.max(rig.scale.x, 0.2);
+            const len = dist || 0.0001;
+            pos.x += (dx / len) * f;
+            pos.y += (dy / len) * f;
+            pos.z += k * 0.9;
+            sBeep = Math.max(sBeep, k * 0.55);   // and they swell a little
+          }
         }
       }
 
@@ -405,9 +523,6 @@ async function boot() {
     rig.position.x += (offX - rig.position.x) * 0.06;
     rig.scale.setScalar(rig.scale.x + (sc - rig.scale.x) * 0.06);
     // and it recedes further while the eye is on the copy
-    // the modal is the one place they should be unmistakable
-    mat.opacity = (0.72 * (1 - toWord) + 1.0 * toWord)
-                * (1 - 0.40 * reading) * (1 - modal) + 0.98 * modal;
 
     const flatten = Math.max(toWord, modal);
     camera.position.set(Math.sin(t * 0.22) * 0.7 * roam * (1 - flatten),
