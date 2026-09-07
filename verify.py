@@ -106,6 +106,40 @@ def check_machine():
     print(f"  {len(B.ARCHETYPES)} archetypes, all rows have primitives")
 
 
+def check_scene_tdz():
+    """The scene has died twice to the same mistake: boot() runs its body
+    synchronously, so a module-level `const` declared BELOW the call site is
+    still in the temporal dead zone when boot() reaches it. The symptom is
+    silent — canvas mounts, nothing renders.
+
+    The rule here is deliberately blunt: ANY module-level const or let after
+    the call site is a failure. A narrower check that only scanned boot()'s
+    own body missed the real bug, because GLYPHS was reached indirectly via
+    buildWord(). Following the call graph is not worth it — "declarations
+    first, invocation last" is the convention, so just enforce it.
+    """
+    path = os.path.join(ROOT, "scene.js")
+    if not os.path.exists(path):
+        return
+    src = open(path, encoding="utf-8").read()
+
+    m = re.search(r"^\s*boot\(\)\.catch", src, re.M)
+    if not m:
+        fail("scene.js: cannot find the boot() call site")
+        return
+    call_at = m.start()
+
+    late = [d.group(2) for d in re.finditer(r"^(const|let)\s+(\w+)\s*=", src, re.M)
+            if d.start() > call_at]
+    if late:
+        fail("scene.js: %d module binding(s) declared AFTER the boot() call "
+             "(%s) — temporal dead zone, the scene will not start. Move the "
+             "boot() call to the bottom of the file."
+             % (len(late), ", ".join(sorted(set(late))[:6])))
+    else:
+        print("  scene.js: boot() is last, no temporal-dead-zone risk")
+
+
 def check_no_leaked_placeholders():
     """An f-string brace that was escaped by mistake renders as literal text.
     It is easy to miss in a long template and it ships as visible garbage."""
@@ -124,7 +158,7 @@ def check_no_leaked_placeholders():
 
 if __name__=="__main__":
     print("verifying build\n")
-    check_pages(); check_no_leaked_placeholders()
+    check_pages(); check_no_leaked_placeholders(); check_scene_tdz()
     check_contrast(); check_single_source(); check_machine()
     print()
     if problems:

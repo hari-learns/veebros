@@ -16,14 +16,6 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
 const TAU = Math.PI * 2;
 
-const host = document.querySelector("[data-scene]");
-if (host && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
-  // Never swallow this. A silent catch turns a one-line ReferenceError into an
-  // invisible failure: the canvas mounts, `is-live` never lands, the poster
-  // stays up, and the page looks merely empty rather than broken.
-  boot().catch((err) => { console.warn("[scene] disabled:", err); });
-}
-
 /* A hand-authored 9x12 pixel font.
  *
  * Rasterising a real typeface and thresholding it will never give clean
@@ -433,7 +425,7 @@ async function boot() {
       const wantsCopyPush = roam > 0.02 && modal < 0.4;
       const wantsPointer = ptrOn > 0.02 && modal < 0.4;
       if (wantsCopyPush || wantsPointer) {
-        world.copy(pos).applyMatrix4(rig.matrixWorld).applyMatrix4(mesh.matrix);
+        world.copy(pos).applyMatrix4(mesh.matrixWorld);
         ndc.copy(world).project(camera);
 
         if (wantsCopyPush) {
@@ -539,4 +531,19 @@ async function boot() {
 
   host.classList.add("is-live");
   frame();
+}
+
+/* ---------------------------------------------------------------------------
+   Start it. This call lives at the BOTTOM on purpose: boot() runs its body
+   synchronously, so any module-level `const` declared below the call site is
+   still in the temporal dead zone when boot() reaches it. That has now bitten
+   twice — first TAU, then GLYPHS — and each time the symptom was a scene that
+   simply never appeared. Declarations first, invocation last.
+   --------------------------------------------------------------------------- */
+const host = document.querySelector("[data-scene]");
+if (host && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  // Never swallow this: a silent catch turns a one-line ReferenceError into an
+  // invisible failure — the canvas mounts, `is-live` never lands, the poster
+  // stays up, and the page looks merely empty rather than broken.
+  boot().catch((err) => { console.warn("[scene] disabled:", err); });
 }
