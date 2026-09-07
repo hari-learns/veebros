@@ -15,6 +15,9 @@ import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
 const TAU = Math.PI * 2;
+const TILT = -0.42;                    // the oval sits on a diagonal
+const TILT_C = Math.cos(TILT);
+const TILT_S = Math.sin(TILT);
 
 /* A hand-authored 9x12 pixel font.
  *
@@ -184,8 +187,10 @@ async function boot() {
   const geo = new THREE.BoxGeometry(1, 1, 1);
   // Transparent and dark: it must sit UNDER the type at all times. The rim
   // light describes the silhouette; the traces do the talking.
+  // White base: every cube's real colour lives in instanceColor, which is
+  // what lets a single one light up without touching the rest.
   const mat = new THREE.MeshPhysicalMaterial({
-    color: 0xC9CEE6, metalness: 0.18, roughness: 0.52,
+    color: 0xFFFFFF, metalness: 0.18, roughness: 0.52,
     clearcoat: 1, clearcoatRoughness: 0.30,
     transparent: true, opacity: 0.72,
   });
@@ -194,6 +199,8 @@ async function boot() {
   const mesh = new THREE.InstancedMesh(geo, mat, COUNT);
   mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   mesh.frustumCulled = false;
+  mesh.instanceColor = new THREE.InstancedBufferAttribute(
+    new Float32Array(COUNT * 3).fill(1), 3);
   rig.add(mesh);
 
   const traceMat = new THREE.MeshBasicMaterial({
@@ -258,6 +265,9 @@ async function boot() {
   }
 
   const dummy = new THREE.Object3D();
+  const cBase = new THREE.Color();
+  const cLit = new THREE.Color(0x3355F0);   // the pop
+  const cTmp = new THREE.Color();
   const pos = new THREE.Vector3();
   const world = new THREE.Vector3();
   const ndc = new THREE.Vector3();
@@ -306,10 +316,12 @@ async function boot() {
   // The modal drives these. Cubes gather around whichever field has focus.
   let modal = 0, modalT = 0;            // 0..1 blend into modal behaviour
   let burst = 0, burstT = 0;            // the submit payoff
-  let loopT = 0;                        // the loop's own rotation
-  // A keystroke drops a beep at a random point on the loop; it travels round
-  // and fades. Up to four at once, so fast typing reads as a run of them.
-  const beeps = [];
+  let loopT = 0;
+  // One character in, a few cells on the board light up and fade — the chip
+  // reacting to input. Indices are chosen per keystroke, so the pattern never
+  // repeats.
+  const lit = new Float32Array(COUNT);
+  let anyLit = false;
   const panelN = new THREE.Vector2(0, 0);      // the modal panel, in NDC
   const panelHalf = new THREE.Vector2(0.3, 0.4);
   const focusN = new THREE.Vector2(0, 0);
@@ -330,10 +342,13 @@ async function boot() {
       focusTargetN.set((r.left + r.width / 2) / innerWidth * 2 - 1,
                        -((r.top + r.height / 2) / innerHeight * 2 - 1));
     },
-    // every keystroke drops a beep on the loop
+    // every keystroke lights a handful of cells
     type() {
-      if (beeps.length > 3) beeps.shift();
-      beeps.push({ u: Math.random(), life: 1 });
+      const n = 5 + ((Math.random() * 4) | 0);
+      for (let k = 0; k < n; k++) {
+        lit[(Math.random() * COUNT) | 0] = 1;
+      }
+      anyLit = true;
     },
     burst() { burstT = 1; setTimeout(() => { burstT = 0; }, 2600); },
   };
@@ -360,14 +375,16 @@ async function boot() {
     cur += (target - cur) * 0.055;
     modal += (modalT - modal) * 0.07;
     burst += (burstT - burst) * 0.09;
-    loopT += 0.0016;                       // the loop never stops turning
+    loopT += 0.0016;
     ptrOn += (ptrOnT - ptrOn) * 0.08;
     ptr.x += (ptrTo.x - ptr.x) * 0.16;
     ptr.y += (ptrTo.y - ptr.y) * 0.16;
-    for (let b = beeps.length - 1; b >= 0; b--) {
-      beeps[b].u += 0.016;                 // the beep runs around the loop
-      beeps[b].life -= 0.012;
-      if (beeps[b].life <= 0) beeps.splice(b, 1);
+    if (anyLit) {
+      let still = false;
+      for (let k = 0; k < COUNT; k++) {
+        if (lit[k] > 0.002) { lit[k] *= 0.935; still = true; } else lit[k] = 0;
+      }
+      anyLit = still;
     }
     focusN.x += (focusTargetN.x - focusN.x) * 0.08;
     focusN.y += (focusTargetN.y - focusN.y) * 0.08;
@@ -381,7 +398,7 @@ async function boot() {
     const toWord    = ease(seg(p, 0.88, 1.0));    // the sign-off
     const roam      = Math.max(1 - toDie, toFree * (1 - toWord));
 
-    let panelWX = 3.2, panelWY = 2.4, modalBeep = 0;
+    let panelWX = 3.2, panelWY = 2.4, panelR = 4.0, modalBeep = 0;
     if (modal > 0.01) {
       ndcToWorld(focusN.x, focusN.y, focusW);
       ndcToWorld(panelN.x, panelN.y, panelW);
@@ -389,7 +406,12 @@ async function boot() {
       ndcToWorld(panelN.x + panelHalf.x, panelN.y + panelHalf.y, edgeW);
       panelWX = Math.abs(edgeW.x - panelW.x);
       panelWY = Math.abs(edgeW.y - panelW.y);
+      panelR = Math.hypot(panelWX, panelWY);   // clears the panel at any tilt
     }
+
+    // set before the loop that reads it — otherwise frame one renders black
+    cBase.setHex(toWord * (1 - modal) > 0.5 ? 0x5B6BF0
+               : (modal > 0.5 ? 0xAEB7E8 : 0xC9CEE6));
 
     for (let i = 0; i < COUNT; i++) {
       const s = P[i];
@@ -399,9 +421,10 @@ async function boot() {
       pos.set(Math.cos(ang) * s.ringRX, Math.sin(ang) * s.ringRY, s.ringZ);
       pos.lerp(s.lattice, toLattice).lerp(s.die, toDie);
       if (toFree > 0) pos.lerp(s.free, toFree);
-      if (toWord > 0) {
-        if (s.word) pos.lerp(s.word, toWord);
-        else pos.lerp(new THREE.Vector3(pos.x * 3.2, pos.y * 3.2, -14), toWord);
+      const wordAmt = toWord * (1 - modal);
+      if (wordAmt > 0) {
+        if (s.word) pos.lerp(s.word, wordAmt);
+        else pos.lerp(new THREE.Vector3(pos.x * 3.2, pos.y * 3.2, -14), wordAmt);
       }
 
       /* Modal: the cubes ring the panel. The orbit starts outside the panel
@@ -465,20 +488,29 @@ async function boot() {
       const r = roam * (1 - modal);
       dummy.rotation.set(0.22 * r, ang * 0.25 * r + modal * ang * 0.4, 0.16 * r);
 
-      const flat = Math.max(toWord, modal);
-      let side = (0.19 + 0.15 * toDie) * (1 - modal * 0.2) * (1 + sBeep * 1.5);
-      let depth = (0.19 * (1 - toDie) + s.h * toDie) * (1 - flat) + 0.20 * flat;
-      if (toWord > 0) {
+      // a lit cell pops: colour AND a little scale, or it just recolours
+      if (lit[i] > 0.002) sBeep = Math.max(sBeep, lit[i] * 0.6);
+
+      const dieAmt = Math.max(toDie, modal);
+      const flat = wordAmt;
+      let side = (0.19 + 0.15 * dieAmt) * (1 + sBeep * 1.5);
+      let depth = (0.19 * (1 - dieAmt) + s.h * dieAmt) * (1 - flat) + 0.20 * flat;
+      if (wordAmt > 0) {
         // fill the cell, minus a hairline, so glyphs read as solid strokes
-        const lit = s.word ? wordPitch * 0.92 : 0;
-        side = side * (1 - toWord) + lit * toWord;
-        depth = depth * (1 - toWord) + wordPitch * 0.55 * toWord;
+        const cell = s.word ? wordPitch * 0.92 : 0;
+        side = side * (1 - wordAmt) + cell * wordAmt;
+        depth = depth * (1 - wordAmt) + wordPitch * 0.55 * wordAmt;
       }
       dummy.scale.set(side, side, depth);
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
+
+      cTmp.copy(cBase);
+      if (lit[i] > 0.002) cTmp.lerp(cLit, Math.min(1, lit[i]));
+      mesh.setColorAt(i, cTmp);
     }
     mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
 
     const traceOn = toDie * (1 - toFree) * (1 - modal);
     traces.visible = traceOn > 0.04;
@@ -506,8 +538,6 @@ async function boot() {
     }
 
     // the wordmark is the content, so it takes the brand colour
-    mat.color.setHex(toWord > 0.5 ? 0x5B6BF0
-                   : (modal > 0.5 ? 0x4F5FE8 : 0xC9CEE6));
 
     /* Staging. The die is ~9 world units across and the copy column is dead
        centre, so a centred chip simply sits on top of the words. While there
@@ -521,15 +551,17 @@ async function boot() {
     rig.scale.setScalar(rig.scale.x + (sc - rig.scale.x) * 0.06);
     // and it recedes further while the eye is on the copy
 
-    const flatten = Math.max(toWord, modal);
-    camera.position.set(Math.sin(t * 0.22) * 0.7 * roam * (1 - flatten),
-                        (0.9 - toDie * 0.4) * (1 - flatten),
-                        16 + toLattice * 1.2 - toDie * 1.0 + toFree * 1.6
-                          - toWord * 1.2 + modal * 1.0);
-    mesh.rotation.x = -0.88 * toDie * (1 - flatten);
-    mesh.rotation.z = 0.20 * toDie * (1 - flatten);
+    // only the wordmark flattens the view; the modal keeps the board tilted
+    const flatten = toWord * (1 - modal);
+    const dieView = Math.max(toDie, modal);
+    camera.position.set(Math.sin(t * 0.22) * 0.7 * roam * (1 - flatten) * (1 - modal),
+                        (0.9 - dieView * 0.4) * (1 - flatten),
+                        16 + toLattice * 1.2 - dieView * 1.0 + toFree * 1.6 * (1 - modal)
+                          - flatten * 1.2);
+    mesh.rotation.x = -0.88 * dieView * (1 - flatten);
+    mesh.rotation.z = 0.20 * dieView * (1 - flatten);
     traces.rotation.copy(mesh.rotation);
-    camera.lookAt(0, (-1.1 * toDie) * (1 - flatten), 0);
+    camera.lookAt(0, (-1.1 * dieView) * (1 - flatten), 0);
 
     renderer.render(scene, camera);
   }
